@@ -234,9 +234,9 @@ public class Sphere extends Solid {
 		Vect3 v1i = getVelocity();
 		//print(this+"\n"+"initial v:"+v1i);
 		Vect3 v2i = other.getVelocity();
-		Vect3 vcm = v1i.cpy().scl(this.mass).add( v2i.cpy().scl(other.mass) ).scl(1/(this.mass+other.mass));
-		Vect3 v1f = v1i.cpy().sub( dist12.cpy().scl(v1i.cpy().sub(vcm).dot(dist12)).scl(1/dist12.len2()) );
-		Vect3 v2f = v2i.cpy().sub( dist21.cpy().scl(v2i.cpy().sub(vcm).dot(dist21)).scl(1/dist21.len2()) );
+		Vect3 vcm = v1i.scl(this.mass).add( v2i.scl(other.mass) ).scl(1/(this.mass+other.mass));
+		Vect3 v1f = v1i.sub( dist12.scl(v1i.sub(vcm).dot(dist12)).scl(1/dist12.len2()) );
+		Vect3 v2f = v2i.sub( dist21.scl(v2i.sub(vcm).dot(dist21)).scl(1/dist21.len2()) );
 		this.dx = v1f.x*elasticity;
 		this.dy = v1f.y*elasticity;
 		this.dz = v1f.z*elasticity;
