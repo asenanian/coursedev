@@ -1,4 +1,4 @@
-package com.mygdx.entities;
+package com.mygdx.Entities;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;

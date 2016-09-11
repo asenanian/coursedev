@@ -1,7 +1,5 @@
-# coursedev 
+# coursedev
 
-## shared 
+# shared
 
-`:shared` contains datatypes to be serialized. Each added datatypes must be added to the register function in MyPackets.java. 
-## core
-Class for client side communication is located in core/managers/ClientInterface.
+':shared' contains datatypes to be serialized. Class to handle client-side communication with server is located in core/managers/ClientInterface

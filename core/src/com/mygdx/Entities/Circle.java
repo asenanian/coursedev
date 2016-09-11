@@ -1,23 +1,5 @@
-package com.mygdx.entities;
+package com.mygdx.Entities;
 
-import com.badlogic.gdx.graphics.Color;
-import com.mygdx.game.Verlet3D;
-import java.util.ArrayList;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Material;
-import com.badlogic.gdx.graphics.g3d.ModelBatch;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.mygdx.game.TestVerlet;
-import com.mygdx.game.Verlet3D;
 
 public class Circle extends Point {
 	public float elasticity = 0.9f;
@@ -25,7 +7,7 @@ public class Circle extends Point {
 	//private Color color;
 	//private boolean pinned;
 	public Circle(float[] position, float[] prevPosition, float radius, boolean pinned) {
-		super(position, prevPosition, false, false, pinned);
+		super(position, prevPosition, false, pinned);
 		setRadius(radius);
 	}
 	public Circle(float[] position, float radius, boolean pinned) {
@@ -41,14 +23,7 @@ public class Circle extends Point {
 		}
 		return false;
 	}
-	public boolean collidedWithCannon(Cannon cannon) {
-		
-		//use pointInRect(pos) function
-		
-		
-		
-		return false;
-	}
+
 	public void processCollision(Circle other,float gravity) {
 		/*
 		 * REMAINING BUGS:
