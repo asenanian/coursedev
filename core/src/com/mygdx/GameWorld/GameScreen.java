@@ -4,35 +4,41 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Box2D;
+import com.badlogic.gdx.physics.box2d.World;
+import com.mygdx.Renderer.GameRenderer;
 import com.mygdx.managers.GameInputProcessor;
 import com.mygdx.managers.MenuInputProcessor;
 
 public class GameScreen implements Screen {
 	
-	private GameWorld world;
+	private GameManager manager;
 	private GameRenderer renderer;
 	private float runTime;
+	
+	// Box 2d World
+	World world;
 	
 	
 	public GameScreen(){
 		
 		GameConstants.setConstants();
 		
-		world = new GameWorld();
+		Box2D.init();
+		
+		world = new World(new Vector2(0,-GameConstants.GRAVITY),true);
+		manager = new GameManager(world);
+		renderer = new GameRenderer(manager);
 		
 		InputMultiplexer multiplexer = new InputMultiplexer();
-		multiplexer.addProcessor(new MenuInputProcessor(world));
-		multiplexer.addProcessor(new GameInputProcessor(world));
+		multiplexer.addProcessor(new MenuInputProcessor(manager));
+		multiplexer.addProcessor(new GameInputProcessor(manager,renderer));
 		Gdx.input.setInputProcessor(multiplexer);
 		
-		 //allow for transparency
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-		
-		renderer = new GameRenderer(world);
 		renderer.initButtons();
 		
-		world.setRenderer(renderer);
-		world.loadUI();
+		manager.setRenderer(renderer);
 		
 	}
 
@@ -44,15 +50,13 @@ public class GameScreen implements Screen {
 	@Override
 	public void render(float delta) {
 		runTime += delta;
-		world.update(delta);
 		renderer.render(delta,runTime);
+		manager.update(delta);
 	}
 
 	@Override
 	public void resize(int width, int height) {
-		GameConstants.setConstants();
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
@@ -75,6 +79,7 @@ public class GameScreen implements Screen {
 
 	@Override
 	public void dispose() {
+		world.dispose();
 		// TODO Auto-generated method stub
 		
 	}

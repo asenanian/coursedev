@@ -3,6 +3,8 @@ package com.mygdx.Entities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Vector2;
+import com.mygdx.GameWorld.GameConstants;
 
 public class Rect {
 	protected float[] center;
@@ -39,7 +41,7 @@ public class Rect {
 		this.color = color;
 		this.outlineColor = color;
 		this.filled = filled;
-		this.w = 1;
+		this.w = 3;
 		
 	}
 	public Rect (float left, float bottom, float width, float height, boolean filled) {
@@ -56,10 +58,11 @@ public class Rect {
 	public Rect (Color color, boolean filled) {
 		this(0,0,0,0,color,filled);
 	}
-	public boolean containsPos(float[] pos) {
+	public boolean containsPos(int x, int y) {
 		//center is from (0,0) at bottom left of screen
-		if (pos[0] > left && pos[0] < right &&
-				pos[1] > bottom && pos[1] < top) {
+
+		if( (x > left && (x < right) ) &&
+				( (y > bottom) && (y < top) )){
 			return true;
 		}
 		return false;
@@ -150,6 +153,7 @@ public class Rect {
 		bounds[3] = height;
 	}
 	public void drawOutline(ShapeRenderer shapeRenderer) {
+		shapeRenderer.set(ShapeType.Filled);
 		shapeRenderer.setColor(outlineColor);
 		shapeRenderer.rectLine(left,top,right,top,w);
 		shapeRenderer.rectLine(right,top,right,bottom,w);
@@ -157,14 +161,17 @@ public class Rect {
 		shapeRenderer.rectLine(left,bottom,left,top,w);
 	}
 	public void drawFilled(ShapeRenderer shapeRenderer) {
+		shapeRenderer.set(ShapeType.Filled);
 		shapeRenderer.setColor(color);
 		shapeRenderer.rect(left,bottom,width,height);
 	}
 	public void draw(ShapeRenderer shapeRenderer) {
 		if (color == null) return;
-		shapeRenderer.set(ShapeType.Filled);
+		
 		if (filled) drawFilled(shapeRenderer);
 		drawOutline(shapeRenderer);
+		
+		
 	}
 	
 	public void print(Object obj) {

@@ -7,31 +7,35 @@ public final class GameConstants {
 	private GameConstants(){}
 	
 	public static void setConstants(){
+		W_WIDTH = 100;
+		W_HEIGHT = 60;
 		WIDTH = Gdx.graphics.getWidth();
 		HEIGHT = Gdx.graphics.getHeight();
+		ASPECT_RATIO = HEIGHT/WIDTH;
 		FLOOR = 90;
 		CEILING = HEIGHT - 10;
 		LEFTWALL = 10;
 		RIGHTWALL = WIDTH - 10;
 	}
 	
-	public static final int B_WIDTH = 128;
-	public static final int B_HEIGHT = 80;
-	public static final int B_PADDING = 5;
+	public static final int LC_WIDTH_TEXTURE = 128;
+	public static final int LC_HEIGHT_TEXTURE =80;
+	public static final int LC_WIDTH = 96;
+	public static final int LC_HEIGHT = 60;
+	public static final int LC_PADDING = 5;
 	public static final int MENU_BUTTON_WIDTH = 312;
 	public static final int MENU_BUTTON_HEIGHT = 96;
 	
-	public static final float CIRCLE_RADIUS = 14f;
-	public static final float TIME_CONSTANT = 0.001f;
-	public static final float GRAVITY = -TIME_CONSTANT*100f;
-	public static final float STRING_SEGMENT_LENGTH = 10f;
-	public static final float SPRING_CONSTANT = TIME_CONSTANT*50f;
-	public static final float SPRING_WIDTH = 5f;
-	public static final int EXPENSIVENESS = 10;
-	public static final int NUM_CREATE_BUTTONS = 9;
+	public static final float GRAVITY = 10f;
+	public static final float SPRING_CONSTANT = 10f;
+	public static final float SPRING_WIDTH = .05f;
+	public static final float MODIFIER_WIDTH = .1f;
+	public static final float MODIFIER_SCL = 3f; 
 	
-	public static int HEIGHT;
-	public static int WIDTH;
+	
+	public static int HEIGHT, W_HEIGHT;
+	public static int WIDTH, W_WIDTH;
+	public static float ASPECT_RATIO;
 	public static int FLOOR, CEILING, LEFTWALL, RIGHTWALL;
 	
 }

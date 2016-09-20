@@ -3,7 +3,7 @@ package com.mygdx.managers;
 import java.util.HashMap;
 
 import com.mygdx.GameWorld.GameConstants;
-import com.mygdx.GameWorld.GameWorld;
+import com.mygdx.GameWorld.GameManager;
 import com.mygdx.ui.MenuUI;
 import com.mygdx.ui.SimpleButton;
 import com.badlogic.gdx.Gdx;
@@ -11,11 +11,11 @@ import com.badlogic.gdx.InputProcessor;
 
 public class MenuInputProcessor implements InputProcessor {
 	
-	private GameWorld world;
+	private GameManager world;
 	private HashMap<String,SimpleButton> menuButtons = new HashMap<String,SimpleButton>();
 	private MenuUI ui = new MenuUI();
 	
-	public MenuInputProcessor(GameWorld world){
+	public MenuInputProcessor(GameManager world){
 		
 		this.world = world;		
 		ui.load(menuButtons);
@@ -23,6 +23,8 @@ public class MenuInputProcessor implements InputProcessor {
 	
 	@Override
 	public boolean touchDown (int x, int y, int pointer, int button) {
+
+		//Vector2 mousePos = mousePos(x,GameConstants.HEIGHT - y);
 		y = GameConstants.HEIGHT - y;
 		
 		if(world.isMenu()){
@@ -42,11 +44,10 @@ public class MenuInputProcessor implements InputProcessor {
 		y = GameConstants.HEIGHT - y;
 		
 		if(world.isMenu()){
-			for(SimpleButton menuButton : menuButtons.values()){
-				if(menuButton.isTouchUp(x,y)){
-					Gdx.app.log("MenuButtons", "("+x+","+y+")");
-					return true;
-				}
+			if ( menuButtons.get("PLAY").isTouchUp(x,y) ){
+				world.create();
+			} else if ( menuButtons.get("QUIT").isTouchUp(x, y)){
+				Gdx.app.exit(); //quit game
 			}
 		} else {
 			return false; //pass event to next inputprocessor

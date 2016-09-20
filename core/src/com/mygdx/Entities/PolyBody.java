@@ -4,45 +4,40 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-
+import com.badlogic.gdx.math.Polygon;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 
-import com.mygdx.managers.AssetLoader;
-
-public class Circle implements IGameObject{
-	private final float pos[];
-	private final boolean pinned;
-	private final float radius;
+public class PolyBody implements IGameObject{
+	private final Vector2 [] vertices;
 	private final float restitution;
 	private final float friction;
 	private final float density;
 	private final Color color;
+	private final boolean pinned;
 	
-	private Body circleBody;
+	private Body body;
 	private Fixture fixture;
-	
-	private boolean isPressed = false;
-	private boolean isSelected = false;
+	private Polygon bounds;
 	
 	public static class Constructor {
 		// required params
-		private float pos[];
+		private final Vector2 [] vertices;
 		private final boolean pinned;
-		private final float radius;
 		
 		// option params
 		private float restitution = 0.6f;
 		private float friction = 0.1f;
 		private float density = 1.0f;
 		
-		public Constructor(float [] pos, float radius, boolean pinned){
-			this.pos = pos;
-			this.radius = radius;
+		public Constructor(Vector2 [] vertices, boolean pinned){
+
+			this.vertices = vertices;	
 			this.pinned = pinned;
 		}
 		
@@ -55,104 +50,111 @@ public class Circle implements IGameObject{
 		public Constructor density(float val)
 		{ this.density = val;		return this; }
 		
-		public Circle Construct(){
-			return new Circle(this);
+		public PolyBody Construct(){
+			return new PolyBody(this);
 		}
 	}
 	
-	public Circle(Constructor constructor){
-		pos = constructor.pos;
+	public PolyBody(Constructor constructor){
+		vertices = constructor.vertices;
 		pinned = constructor.pinned;
-		radius = constructor.radius > 0.5 ? constructor.radius : 0.25f;
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
-		color = pinned ? Color.BLACK : Color.MAROON;
+		color = pinned? Color.BLACK: Color.MAROON;
 	}
 	
 	@Override
 	public void initialize(World world){
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = pinned ? BodyDef.BodyType.StaticBody : BodyDef.BodyType.DynamicBody;
-		bodyDef.position.set(pos[0],pos[1]);
+
+		//bodyDef.position.set(.5f*(vertices[0].x + vertices[vertices.length - 1].x),
+		//		.5f*(vertices[vertices.length - 1].y + vertices[0].y));
 		
-		circleBody = world.createBody(bodyDef);
-		CircleShape circle = new CircleShape();
-		circle.setRadius(radius);
+		bodyDef.position.set(0,0);
+		
+		body = world.createBody(bodyDef);
+		
+		PolygonShape polyShape = new PolygonShape();
+		polyShape.set(vertices);
+		/*
+		for(int i = 1; i < vertices.length - 1; i++){
+			chainShape.setNextVertex(vertices[i]);
+		}
+		*/		
 		
 		FixtureDef fixtureDef = new FixtureDef();
-		fixtureDef.shape = circle;
+		fixtureDef.shape = polyShape;
 		fixtureDef.density = density;
 		fixtureDef.friction = friction;
 		fixtureDef.restitution = restitution;
 		
-		fixture = circleBody.createFixture(fixtureDef);
-		circle.dispose();
-
+		fixture = body.createFixture(fixtureDef);
+		polyShape.dispose();
+		
+		float vertexBounds [] = new float[vertices.length*2];
+		
+		for(int i = 0; i < vertices.length; i++){
+			vertexBounds[2*i] = vertices[i].x;
+			vertexBounds[2*i+1] = vertices[i].y;			
+		}
+		
+		bounds = new Polygon(vertexBounds);
+		
 	}
 	
 	@Override
-	public void draw(ShapeRenderer shapeRenderer){
+	public void draw(ShapeRenderer shapeRenderer){		
+		bounds.translate(0.05f, 0.05f);
+
+		//Gdx.app.log("",body.getPosition().x + "," +body.getPosition().y);
+		shapeRenderer.setColor(this.color);
 		shapeRenderer.set(ShapeType.Filled);
-		
-		shapeRenderer.setColor(Color.MAROON);
-		shapeRenderer.circle(circleBody.getPosition().x, circleBody.getPosition().y, this.radius,42);
-		
-		shapeRenderer.setColor(this.color.cpy().mul(0.9f));
-		shapeRenderer.circle(circleBody.getPosition().x, circleBody.getPosition().y, this.radius * .8f,42);
+		shapeRenderer.polygon(bounds.getTransformedVertices());
 		
 	}
 	
 	@Override
 	public void drawShadows(ShapeRenderer shapeRenderer, SpriteBatch batcher){
-		batcher.draw(AssetLoader.circleShadow, circleBody.getPosition().x - (radius/64)*(64 + 24.2f) , circleBody.getPosition().y - (radius/64)*(64+27.5f)  ,
-				(radius/64)*(128+39.f), (radius/64)*(128 + 40));
+		bounds.setPosition(body.getPosition().x, body.getPosition().y);
+		bounds.setRotation((float)(Math.toDegrees(body.getAngle())));
+		
+		
+		//Gdx.app.log("",body.getPosition().x + "," +body.getPosition().y);
+		shapeRenderer.setColor(50/255f,50/255f,50/255f,0.5f);
+		shapeRenderer.set(ShapeType.Line);
+		
+		shapeRenderer.polyline(bounds.getTransformedVertices());
 	}
 	
-	@Override
+	@Override	
 	public boolean containsPos(float x, float y){
-
-		float r = (this.radius == 0 ? this.radius : this.radius);
-		if (x > circleBody.getPosition().x-r && x < circleBody.getPosition().x+r &&
-				y > circleBody.getPosition().y-r && y < circleBody.getPosition().y+r) {
-			return true;
-		}
-		return false;
+		return bounds.contains(x, y);
 	}
 	
 	@Override
 	public boolean isSelecting(float x, float y){
-		if ( containsPos(x,y) ){
-			isPressed = true;
-			return true;
-		}
 		return false;
 	}
 	
 	@Override
 	public boolean isSelected(float x, float y){
-		if( containsPos(x, y) && isPressed ){
-			isPressed = false;
-			isSelected = !isSelected; 
-			return true;
-		}
-		
-		isPressed = false;
 		return false;
 	}
 	
 	@Override
 	public Body getBody(){
-		return circleBody;
+		return body;
 	}
 	
 	@Override
 	public float getWidth(){
-		return this.radius;
+		return this.density;
 	}
 	
 	@Override
 	public float getHeight(){
-		return this.radius;
+		return this.density;
 	}
 }

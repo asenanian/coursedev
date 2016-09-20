@@ -4,82 +4,168 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import com.mygdx.Entities.Point;
+import com.mygdx.Entities.IGameObject;
 import com.mygdx.GameWorld.GameConstants;
-import com.mygdx.GameWorld.GameWorld;
+import com.mygdx.GameWorld.GameManager;
+import com.mygdx.Renderer.GameRenderer;
 import com.mygdx.ui.SimpleButton;
 import com.mygdx.ui.LevelCreatorUI;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 
 public class GameInputProcessor implements InputProcessor {
 	
-	private GameWorld world;
+	private GameManager world;
+	private GameRenderer renderer;
+	private Mouse mouse;
+	
+	private static class Mouse{
+		public int indexDown;
+		// index of point on touchDown.
+		public float posDown[] = {0,0};
+		// position of the indexDown point.
+		public float posOnDrag[] = {0,0}; 
+		// saves mouse position information to relay to prevPos on next time step
+		public float prevPos[] = {0,0};
+		public Mouse(){}		
+	}
 	
 	private LevelCreatorUI ui = new LevelCreatorUI();
+	
 	private HashMap<String,SimpleButton> controlBar = new HashMap<String,SimpleButton>();
 	private HashMap<String,SimpleButton> toolBar = new HashMap<String, SimpleButton>();
+	private ArrayList<Vector2> vertices = new ArrayList<Vector2>();
 	
-	public GameInputProcessor(GameWorld world){
+	public GameInputProcessor(GameManager world, GameRenderer renderer){
 		
 		this.world = world;
+		this.renderer = renderer;
+		this.mouse = new Mouse();
 		ui.load(toolBar,controlBar);
 	}
 	
-	
 	@Override
 	public boolean touchDown (int x, int y, int pointer, int button) {
-		if( !world.isCreate() && !world.isRunning())
+		
+		if ( !world.isCreate() && !world.isRunning() )
 			return false;  // pass event to next input processor
 		
+		// converting to physics coordinates
+		float mousePos []  = toWorldCoordinates(x,y);
+		mouse.posOnDrag = mousePos; // Gets rid of jumping when starting to pan the camera.
 		y = GameConstants.HEIGHT - y;
+		
+		// index of game object touched down on
+		int index = getObjectIndex(mousePos[0], mousePos[1]);  
+		
+		// if user is moving an object, notify game manager.
+		if ( toolBar.get("MOVE").getClicked() && index != -1){
+			world.pinObject(index, mousePos);
+			return true;
+		}
+		
+		if ( world.isCreate() && world.getBounds().containsPos(x,y) ){
+		
+			// clicked on a point
+			if(index != -1){ 
+				mouse.posDown = mousePos;
+				
+				Vector2 pointPos = world.getPoints().get(index).getBody().getPosition();
+				mouse.indexDown = index;
+				
+				// if user is building spring/stick joints, notify renderer.
+				if ( toolBar.get("SPRING").getClicked() || toolBar.get("STICK").getClicked() ){
+					renderer.buildJoint(new float [] {pointPos.x, pointPos.y} );
+					return true;
+					
+				// if user is building velocity/force vectors, notify renderer.
+				} else if ( toolBar.get("VELOCITY").getClicked() || toolBar.get("FORCE").getClicked()){
+					renderer.buildModifier(new float [] {pointPos.x, pointPos.y} );
+					return true;	
+				}
+			}
+			
+			// didn't click on a point
+			else { 
+				
+				// if user is building a circle, notify renderer
+				if ( toolBar.get("CIRCLE").getClicked() ){
+					renderer.buildCircle(mousePos);
+					mouse.posDown = mousePos;
+					return true;
+					
+				// if user is building a rectangle, notify renderer
+				} else if ( toolBar.get("RECT").getClicked() ){
+					renderer.buildRect(mousePos);
+					mouse.posDown = mousePos;
+					return true;
+					
+				// if user is building a curve, notify renderer
+				} else if ( toolBar.get("CURVE").getClicked() ){
+					renderer.buildPath(mousePos, vertices);
+					mouse.posDown = mousePos;
+					return true;
+					
+				// ----- Path builder
+				} else if ( toolBar.get("PATH").getClicked() ){
+					
+					// notifies renderer to start rendering path builder
+					if (vertices.size() == 0){
+						renderer.buildPath(mousePos, vertices);
+					} 
+					
+					// escape condition: create polygon if created a loop.
+					if ( isALoop(vertices, mousePos) ){
+						vertices.add(vertices.get(0).cpy());
+						world.addPolygon(vertices, toolBar.get("PINNED").getClicked());
+						vertices.clear();
+						renderer.endBuilder();
+						return true;
+						
+					// escape condition: create chain if clicked near previous point
+					} else if ( distance(mousePos, mouse.posDown ) < 1 ){
+						world.addChain(vertices);
+						vertices.clear();
+						renderer.endBuilder();
+						return true;
+						
+					// else just add a point to the chain.
+					} else {
+						vertices.add(toVector2(mousePos));
+						renderer.updateBuilder(mousePos);
+						mouse.posDown = mousePos;
+						return true;
+					}
 
-		// check and label for toolbar touch-downs
-		for(SimpleButton toolButton : toolBar.values()){
-			if(toolButton.isTouchDown(x, y)) {
+				} // ---- End Path builder
+			} // ----- End whether or not clicked on point
+		} 
+		
+		/*
+		 * TOOLBAR
+		 */
+		if ( world.isCreate() ){
+			for(SimpleButton toolButton : toolBar.values()){
+				if( toolButton.isTouchDown(x, y) ) {
+					return true; //stop checking for other input
+				}
+			}
+		} else if ( world.isRunning() ){
+			if ( toolBar.get("MOVE").isTouchDown(x, y) ){ 
 				return true; //stop checking for other input
 			}
 		}
 		
 		// check and label for controlbar touch-downs
 		for(SimpleButton controlButton : controlBar.values()){
-			if(controlButton.isTouchDown(x, y)) {
+			if( controlButton.isTouchDown(x, y) ) {
 				return true; //stop checking for other input
 			}
 		}
-		
-		float mousePos [] = new float[] {x,y};		
-		
-		if(world.getBounds().containsPos(mousePos)){
-			int i = inPoint(mousePos);
-			if(world.isCreate()){
-				if(i == -1){ //Didn't click on a point
-					if(toolBar.get("CURVE").getClicked()){
-						Mouse.setIndexBegin(world.getPoints().size());  //last index in points array
-						world.addPoint(mousePos, true);
-					} else if(toolBar.get("CIRCLE").getClicked()){
-						Mouse.setIndexBegin(world.getPoints().size());
-						Mouse.clickedPos = mousePos;
-						//world.addCircle(mousePos, GameConstants.CIRCLE_RADIUS);
-					} 
-					return true;
-				}
-				else { // Did click on a point
-					if( world.getPoints().size() > 1 || toolBar.get("CURVE").getClicked()){
-						Mouse.setIndexBegin(i);
-						for(Point p : world.getPoints()){
-							p.makeBig();
-						}
-					}
-				}
-				return true;
-			} else if(world.isRunning()){
-				Mouse.setIndexPinned(i);
-				return true;
-			}
-		}
 
-		return false; // return true to indicate the event was handled
+		return true; // return true to indicate the event was handled
 	}
 	
 	@Override
@@ -87,39 +173,105 @@ public class GameInputProcessor implements InputProcessor {
 		if( !world.isCreate() && !world.isRunning())
 			return false;  // pass event to next input processor
 		
+		// converting to physics coordinates
+		float mousePos [] = toWorldCoordinates(x,y);
+		
+		// measure from the bottom
 		y = GameConstants.HEIGHT - y;
-		float mousePos[] = new float[] {x,y};
+		
+		// stop any building on touch up, unless building a path. 
+		// the path maker will terminate the builder on its own.
+		if ( !toolBar.get("PATH").getClicked() )
+			renderer.endBuilder();
 
-		if(world.getBounds().containsPos(mousePos)){
-			if(world.isCreate()){
-				Gdx.app.log("Current State", "Create");
-				if(pointToPoint(mousePos)){
-					world.addSpring(Mouse.getIndexBegin(),Mouse.getIndexEnd(),toolBar.get("STICK").getClicked(),false);
+		if ( world.isCreate() && world.getBounds().containsPos(x,y) ){
+			int index = getObjectIndex(mousePos[0], mousePos[1]);
+			
+			// did not release on a point. check for possibilities
+			if (index == -1){
+				
+				// mouse was not pushed down on a point either. Check for object creations
+				if ( mouse.indexDown == -1){
+					
+					// add circle to the game world.
+					if ( toolBar.get("CIRCLE").getClicked() ){
+						float radius = distance(mousePos, mouse.posDown);
+						world.addCircle(mouse.posDown, radius, toolBar.get("PINNED").getClicked());
+						mouse.indexDown = -1;						// release
+						return true;								// stop checking for other actions
+						
+					// add rectangle to the game world.
+					} else if ( toolBar.get("RECT").getClicked() ){
+						world.addRectangle(mouse.posDown, mousePos, toolBar.get("PINNED").getClicked());
+						mouse.indexDown = -1; 						// release
+						return true; 								// stop checking for other actions
+						
+					// add a curve to the game world.
+					} else if ( toolBar.get("CURVE").getClicked() ){
+						world.addChain(vertices);
+						vertices.clear();
+						renderer.endBuilder();
+						mouse.indexDown = -1;						// release
+						return true;								// stop checking for other actions
+					}
 				}
-				for(Point p : world.getPoints())
-					p.makeSmall();
-				if(Mouse.getIndexBegin() != -1 && Mouse.isDragged() && toolBar.get("CIRCLE").getClicked()){
-					float[] pointOnCircle = {x - Mouse.clickedPos[0],y - Mouse.clickedPos[1]};
-					float radius = (float) Math.sqrt(Math.pow(pointOnCircle[0],2) + Math.pow(pointOnCircle[1],2));
-					world.addCircle(Mouse.clickedPos, radius);
+				
+				// mouse was pushed down on a point. Check for object modifications.
+				if ( mouse.indexDown != -1){
+					
+					if ( toolBar.get("VELOCITY").getClicked() ){					
+						world.addImpulse(mouse.indexDown, mousePos);
+						mouse.indexDown = -1;						// release
+						return true;								// stop checking for other actions
+						
+					} else if ( toolBar.get("FORCE").getClicked()){
+						world.addForce(mouse.indexDown, mousePos);  // release
+						mouse.indexDown = -1;						// stop checking for other actions
+						return true;
+					}
 				}
 			}
+			
+			// did release on a point
+			else { 
+			
+				// releasing on a point that is different than the one touched down on
+				if ( index != mouse.indexDown ){
+					
+					// notify the manager that conditions are met to build a spring
+					if ( toolBar.get("SPRING").getClicked() ){
+						world.addSpring(mouse.indexDown, index); 	// add spring to new point
+						mouse.indexDown = -1;						// release
+						return true;								// stop checking for other actions
+						
+					// notify the manager that conditions are met to build a spring
+					} else if ( toolBar.get("STICK").getClicked() ){
+						world.addSpring(mouse.indexDown, index); 	// add stick to new point
+						mouse.indexDown = -1;						// release
+						return true;								// stop checking for other actions
+					} 
+				}
+			}
+			
 		}
 		
-		Mouse.setDragged(false);
+		mouse.indexDown = -1; // release
+		world.releaseObject();
 		
-		if(world.isCreate()){
-			Mouse.setIndexBegin(-1);
-			Mouse.setIndexEnd(-1);
-		}
-		else
-			Mouse.setIndexPinned(-1);
-		
-		// check if toolbar is hit. Label buttons as being pressed.
-		for(Entry<String,SimpleButton> entry : toolBar.entrySet()){
-			if(entry.getValue().isTouchUp(x, y)){
-				deselectOtherButtons(entry);
-				Gdx.app.log("Tool Bar", entry.getKey() + " touched.");
+		/*
+		 * TOOLBAR
+		 */
+		if ( world.isCreate() ){
+			// check if toolbar is hit. Label buttons as being pressed.
+			for(Entry<String,SimpleButton> entry : toolBar.entrySet()){
+				if(entry.getValue().isTouchUp(x, y)){
+					deselectOtherButtons(entry.getKey());
+					return true;
+				}
+			}
+		} else if ( world.isRunning() ){
+			if ( toolBar.get("MOVE").isTouchUp(x, y) ){
+				deselectOtherButtons("MOVE");
 				return true;
 			}
 		}
@@ -142,9 +294,9 @@ public class GameInputProcessor implements InputProcessor {
 		
 		return true; // return true to indicate the event was handled
 	}
-	
 	@Override
 	public boolean keyDown(int keycode) {
+
 		// TODO Auto-generated method stub
 		return false;
 	}
@@ -162,108 +314,136 @@ public class GameInputProcessor implements InputProcessor {
 	}
 
 	@Override
-	public boolean touchDragged(int screenX, int screenY, int pointer) {
+	public boolean touchDragged(int x, int y, int pointer) {
 		if(!world.isCreate() && !world.isRunning())
 			return false;
 		
-		Mouse.setDragged(true);	
-		screenY = GameConstants.HEIGHT - screenY;
+		// convert to physics coordinates
+		float mousePos [] = toWorldCoordinates(x,y);
 		
-		if(world.isCreate()){
-			if(!toolBar.get("MOVE").getClicked()){ //TODO figure out enum for toolbars
-				for(Point p : world.getPoints())
-					p.makeBig();
-				
-				float mousePos[] = new float[] {screenX, screenY};
-				if(pointToPoint(mousePos)){
-					world.addSpring(Mouse.getIndexBegin(), Mouse.getIndexEnd(), toolBar.get("STICK").getClicked(), false);
-					Mouse.setIndexBegin(Mouse.getIndexEnd()); // begin building next spring
-					Mouse.setIndexEnd(-1);
+		// saves mouse information for panning
+		mouse.prevPos = mouse.posOnDrag;
+		mouse.posOnDrag = mousePos;
+		y = GameConstants.HEIGHT - y;
+		
+		// move points 
+		world.updatePinner(mousePos);
+		
+		if ( world.isCreate() && world.getBounds().containsPos(x, y) ){
+
+			// if creating an object, pass the current mouse position to the renderer.
+			if ( renderer.isBuilding() ){
+				renderer.updateBuilder(mousePos);
+			}
+			
+			// index of game object currently dragging over
+			int index = getObjectIndex(mousePos[0], mousePos[1]);  
+			
+			if (index == -1 && mouse.indexDown == -1){
+				if ( toolBar.get("CURVE").getClicked() && distance(mouse.posDown, mousePos) > 0.5){
+					vertices.add(toVector2(mousePos));
+					renderer.updateBuilder(mousePos);
+					mouse.posDown = mousePos;
 				}
 			}
 			
-			if(toolBar.get("CURVE").getClicked()){
-				world.addCurve(screenX,screenY);
+			// if been dragging from a point and mouse is currently over another, different point
+			if(index != mouse.indexDown && mouse.indexDown != -1 && index != -1){
+				
+				// get position of point currently dragging over to begin building a spring
+				Vector2 pointPos = world.getPoints().get(index).getBody().getPosition();
+				
+				// hovered over another point. notify the renderer to stop and start rendering next spring.
+				if( toolBar.get("SPRING").getClicked() ){
+					world.addSpring(mouse.indexDown, index); 	// add spring to new point
+					mouse.indexDown = index;					// begin building next spring
+					renderer.endBuilder();
+					renderer.buildJoint(new float [] {pointPos.x, pointPos.y} );
+					return true;
+					
+				// hovered over another point. notify the renderer to stop and start rendering next stick.
+				} else if ( toolBar.get("STICK").getClicked() ){
+					world.addStick(mouse.indexDown, index); 	// add stick to new point
+					mouse.indexDown = index;					// begin building next stick
+					renderer.buildJoint(new float [] {pointPos.x, pointPos.y} );
+					return true;
+				}
 			}
+		}
+		
+		// pan camera
+		if (!toolBar.get("MOVE").getClicked() && !renderer.isBuilding()){
+			float dx = mouse.prevPos[0] - mousePos[0];
+			float dy = mouse.prevPos[1] - mousePos[1];
+			renderer.translateCamera(dx, dy);
 			return true;
 		}
+
 		return false;
 	}
 
 	@Override
-	public boolean mouseMoved(int screenX, int screenY) {
+	public boolean mouseMoved(int x, int y) {
 		if(!world.isCreate() && !world.isRunning())
 			return false;
 		
-		screenY = GameConstants.HEIGHT - screenY;
-		float mousePos[] = new float [] {screenX, screenY};
-		int i = inPoint(mousePos);
+		float mousePos [] = toWorldCoordinates(x,y);
 		
-		if( Mouse.getPointHovered() != i && Mouse.getPointHovered() != -1 && world.getPoints().size() > 0){
-			world.getPoints().get(Mouse.getPointHovered()).makeSmall();
-		}
-		if(i != -1 && world.isCreate()){
-			world.getPoints().get(i).makeBig();
-			Mouse.setPointHovered(i);
+		if ( toolBar.get("PATH").getClicked()){
+			renderer.updateBuilder(mousePos);
 		}
 		return true;
 	}
 
 	@Override
 	public boolean scrolled(int amount) {
+		if(!world.isCreate() && !world.isRunning())
+			return false;
+		renderer.zoomCamera(amount);
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 	/*
 	 * Helpers
 	 */
-	private int inPoint(float [] pos){
-		ArrayList<Point> points = world.getPoints();
-		for (Point p : points) {
-	    	if (p.containsPos(pos)) {
-	    		return points.indexOf(p);
-	    	}
+	
+	private int getObjectIndex(float x, float y){
+		ArrayList<IGameObject> points = world.getPoints();
+		for(IGameObject p : points){
+			if(p.containsPos(x,y)){
+				return points.indexOf(p);
+			}
 		}
 		return -1;
 	}
 	
-	/** checks if the mouse was released on a point, AND if had been dragging from a previous, different point.
-	 * 
-	 * @param mousePos position of the mouse
-	 * @return true if released on a mouse, false otherwise.
-	 */
-	private boolean pointToPoint(float [] mousePos) {
-		if (Mouse.getIndexBegin() != -1) {
-			//clicked on first point to build a chain...
-			int i = inPoint(mousePos);
-			if (i != -1 && i != Mouse.getIndexBegin()) {
-				Mouse.setIndexEnd(i);
-				return true;
-			}
-				
-	    }
-		return false;
+	private boolean isALoop(ArrayList<Vector2> vertices, float [] newPoint){
+		return (vertices.size() > 2 && distance(new float [] {vertices.get(0).x, vertices.get(0).y}, newPoint) < 1 );
 	}
 	
-	private void deselectOtherButtons(Entry<String,SimpleButton> button){
-		if(button.getKey() == "MOVE"){
-			toolBar.get("CIRCLE").release();
-			toolBar.get("SPRING").release();
-			toolBar.get("CURVE").release();
-		} else if(button.getKey() == "CIRCLE"){
-			toolBar.get("MOVE").release();
-			toolBar.get("SPRING").release();
-			toolBar.get("CURVE").release();
-		} else if(button.getKey() == "SPRING"){
-			toolBar.get("MOVE").release();
-			toolBar.get("CIRCLE").release();
-			toolBar.get("CURVE").release();
-		} else if(button.getKey() == "CURVE"){
-			toolBar.get("MOVE").release();
-			toolBar.get("SPRING").release();
-			toolBar.get("CIRCLE").release();
-		}
+	private float distance( float [] pos1, float [] pos2){
+		float distance = (pos2[0] - pos1[0])*(pos2[0] - pos1[0]) + (pos2[1] - pos1[1])*(pos2[1] - pos1[1]);
+		return (float)(Math.sqrt(distance));
 	}
+	
+	private Vector2 toVector2( float [] vec) {
+		return new Vector2( vec[0], vec[1]);
+	}
+	
+	private void deselectOtherButtons(String key){
+		if ( key == "PINNED" || key == "HIDDEN") return;
+		for(Entry<String,SimpleButton> otherButton : toolBar.entrySet()){
+			if (otherButton.getKey() != key && otherButton.getKey() != "PINNED" && otherButton.getKey() != "HIDDEN")
+				otherButton.getValue().release();
+		}
+
+	}
+	
+	private float [] toWorldCoordinates(int x, int y){
+		Vector3 coords = renderer.getWorldCam().unproject(new Vector3(x,y,0));
+		return new float [] {coords.x, coords.y};
+	}
+	
 	
 	/*
 	 * Getters
@@ -276,4 +456,7 @@ public class GameInputProcessor implements InputProcessor {
 		return controlBar;
 	}
 	
+	public ArrayList<Vector2> getChainQueue(){
+		return vertices;
+	}	
 }

@@ -82,7 +82,7 @@ public class ClientInterface {
     		@Override
     		public boolean handle(final WebSocket socket, final circlePacket packet){
     			sendMessage("Recieved packet " + packet.toString());
-    			Circle circle = new Circle(packet.getPos(),packet.getRadius(),packet.getPinned());
+    			Circle circle = new Circle.Constructor(packet.getPos(),packet.getRadius(),packet.getPinned()).Construct();
     			try{
     				circles.offer(circle);
     				sendMessage("Processed circle.");
