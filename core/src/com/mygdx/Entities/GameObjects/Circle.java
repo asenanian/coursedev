@@ -1,9 +1,7 @@
-package com.mygdx.Entities;
+package com.mygdx.Entities.GameObjects;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -11,7 +9,7 @@ import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
-
+import com.mygdx.game.shared.circlePacket;
 import com.mygdx.managers.AssetLoader;
 
 public class Circle implements IGameObject{
@@ -21,9 +19,9 @@ public class Circle implements IGameObject{
 	private final float restitution;
 	private final float friction;
 	private final float density;
-	private final Color color;
+	private final TextureRegion textureRegion;
 	
-	private Body circleBody;
+	private Body body;
 	private Fixture fixture;
 	
 	private boolean isPressed = false;
@@ -67,7 +65,7 @@ public class Circle implements IGameObject{
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
-		color = pinned ? Color.BLACK : Color.MAROON;
+		textureRegion = pinned ? AssetLoader.circlePinned : AssetLoader.circle;
 	}
 	
 	@Override
@@ -76,7 +74,7 @@ public class Circle implements IGameObject{
 		bodyDef.type = pinned ? BodyDef.BodyType.StaticBody : BodyDef.BodyType.DynamicBody;
 		bodyDef.position.set(pos[0],pos[1]);
 		
-		circleBody = world.createBody(bodyDef);
+		body = world.createBody(bodyDef);
 		CircleShape circle = new CircleShape();
 		circle.setRadius(radius);
 		
@@ -86,35 +84,42 @@ public class Circle implements IGameObject{
 		fixtureDef.friction = friction;
 		fixtureDef.restitution = restitution;
 		
-		fixture = circleBody.createFixture(fixtureDef);
+		fixture = body.createFixture(fixtureDef);
 		circle.dispose();
 
 	}
 	
 	@Override
-	public void draw(ShapeRenderer shapeRenderer){
-		shapeRenderer.set(ShapeType.Filled);
-		
-		shapeRenderer.setColor(Color.MAROON);
-		shapeRenderer.circle(circleBody.getPosition().x, circleBody.getPosition().y, this.radius,42);
-		
-		shapeRenderer.setColor(this.color.cpy().mul(0.9f));
-		shapeRenderer.circle(circleBody.getPosition().x, circleBody.getPosition().y, this.radius * .8f,42);
-		
+	public void draw(SpriteBatch batcher){
+		batcher.draw(textureRegion, 
+				(body.getPosition().x - radius), 
+				(body.getPosition().y - radius), 
+				radius, 
+				radius, 
+				radius*2,
+				radius*2,
+				1f,1f,(float)(Math.toDegrees(body.getAngle())));
 	}
 	
 	@Override
-	public void drawShadows(ShapeRenderer shapeRenderer, SpriteBatch batcher){
-		batcher.draw(AssetLoader.circleShadow, circleBody.getPosition().x - (radius/64)*(64 + 24.2f) , circleBody.getPosition().y - (radius/64)*(64+27.5f)  ,
-				(radius/64)*(128+39.f), (radius/64)*(128 + 40));
+	public void drawShadows(SpriteBatch batcher){
+		batcher.draw(AssetLoader.circleShadow, 
+				(body.getPosition().x - (radius/128)*(128 + 60)), 
+				(body.getPosition().y - (radius/128)*(128 + 60)), 
+				(radius/128)*(108+60), 
+				(radius/128)*(108+60), 
+				(radius*2/256)*(216 + 120),
+				(radius*2/256)*(216 + 120),
+				1f,1f,(float)(Math.toDegrees(body.getAngle())));
+		
 	}
 	
 	@Override
 	public boolean containsPos(float x, float y){
 
 		float r = (this.radius == 0 ? this.radius : this.radius);
-		if (x > circleBody.getPosition().x-r && x < circleBody.getPosition().x+r &&
-				y > circleBody.getPosition().y-r && y < circleBody.getPosition().y+r) {
+		if (x > body.getPosition().x-r && x < body.getPosition().x+r &&
+				y > body.getPosition().y-r && y < body.getPosition().y+r) {
 			return true;
 		}
 		return false;
@@ -143,7 +148,7 @@ public class Circle implements IGameObject{
 	
 	@Override
 	public Body getBody(){
-		return circleBody;
+		return body;
 	}
 	
 	@Override
@@ -154,5 +159,10 @@ public class Circle implements IGameObject{
 	@Override
 	public float getHeight(){
 		return this.radius;
+	}
+
+	@Override
+	public Object getPacket() {
+		return new circlePacket(pos,radius,pinned);
 	}
 }

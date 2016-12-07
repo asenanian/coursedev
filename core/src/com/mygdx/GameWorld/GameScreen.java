@@ -1,14 +1,16 @@
 package com.mygdx.GameWorld;
 
+import java.io.FileNotFoundException;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.physics.box2d.World;
+
 import com.mygdx.Renderer.GameRenderer;
-import com.mygdx.managers.GameInputProcessor;
+import com.mygdx.managers.GameInputManager;
 import com.mygdx.managers.MenuInputProcessor;
 
 public class GameScreen implements Screen {
@@ -20,7 +22,6 @@ public class GameScreen implements Screen {
 	// Box 2d World
 	World world;
 	
-	
 	public GameScreen(){
 		
 		GameConstants.setConstants();
@@ -28,18 +29,20 @@ public class GameScreen implements Screen {
 		Box2D.init();
 		
 		world = new World(new Vector2(0,-GameConstants.GRAVITY),true);
-		manager = new GameManager(world);
+		try { manager = new GameManager(world); }
+		catch(FileNotFoundException fe)
+		{
+			Gdx.app.log("FileNotFound", fe.getMessage());
+		}
 		renderer = new GameRenderer(manager);
 		
 		InputMultiplexer multiplexer = new InputMultiplexer();
 		multiplexer.addProcessor(new MenuInputProcessor(manager));
-		multiplexer.addProcessor(new GameInputProcessor(manager,renderer));
+		multiplexer.addProcessor(new GameInputManager(manager,renderer));
 		Gdx.input.setInputProcessor(multiplexer);
 		
 		renderer.initButtons();
-		
 		manager.setRenderer(renderer);
-		
 	}
 
 	@Override
@@ -80,6 +83,7 @@ public class GameScreen implements Screen {
 	@Override
 	public void dispose() {
 		world.dispose();
+		renderer.dispose();
 		// TODO Auto-generated method stub
 		
 	}

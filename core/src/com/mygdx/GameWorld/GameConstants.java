@@ -19,7 +19,7 @@ public final class GameConstants {
 	}
 	
 	public static final int LC_WIDTH_TEXTURE = 128;
-	public static final int LC_HEIGHT_TEXTURE =80;
+	public static final int LC_HEIGHT_TEXTURE = 80;
 	public static final int LC_WIDTH = 96;
 	public static final int LC_HEIGHT = 60;
 	public static final int LC_PADDING = 5;

@@ -1,5 +1,6 @@
 package com.mygdx.GameWorld;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
@@ -7,21 +8,12 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 
-
-import com.mygdx.Entities.Chain;
-import com.mygdx.Entities.Circle;
-import com.mygdx.Entities.Force;
-import com.mygdx.Entities.IJoint;
-import com.mygdx.Entities.IModifier;
-import com.mygdx.Entities.PolyBody;
-import com.mygdx.Entities.IGameObject;
-import com.mygdx.Entities.Impulse;
-import com.mygdx.Entities.Rect;
-import com.mygdx.Entities.Rectangle;
-import com.mygdx.Entities.Spring;
-import com.mygdx.Entities.Stick;
+import com.mygdx.Entities.GameObjects.*;
+import com.mygdx.Entities.Joints.*;
+import com.mygdx.Entities.Modifiers.*;
 import com.mygdx.Renderer.GameRenderer;
 import com.mygdx.managers.ClientInterface;
+import com.mygdx.managers.Encoder;
 
 public class GameManager {
 	
@@ -31,13 +23,14 @@ public class GameManager {
 	private GameRenderer renderer;
 	private World world;
 	private Pinner pinner = new Pinner();
+	private Encoder encoder;
 	
 	// Actors
 	private ArrayList<IJoint> joints;
-	private Rect BOUNDS;
 	private ArrayList<Vector2> canvasBounds;
 	private ArrayList<IGameObject> points;
 	private ArrayList<IModifier> modifiers;
+	private ArrayList<Field> fields;
 	
 	//Server
 	public ClientInterface connection;
@@ -47,28 +40,26 @@ public class GameManager {
 	
 	// helper for pinning objects to mouse
 	private static class Pinner {
-		public int indexPinned = -1;
 		public IGameObject objectToPin;
 		public float offset [];
 		public float pos [];
 		
-		public void init(int index, float [] pos, ArrayList<IGameObject> points){
+		public void init(IGameObject object, float [] pos){
 			this.pos = pos;
-			this.indexPinned = index;
-			this.objectToPin = points.get(index);
+			this.objectToPin = object;
 			this.offset = new float [] { pos[0] - objectToPin.getBody().getPosition().x,
 										 pos[1] - objectToPin.getBody().getPosition().y};
 		}
 		
 		public void pinObject(){
-			objectToPin.getBody().setTransform( pos[0] - offset[0], pos[1] - offset[1], 
-					objectToPin.getBody().getAngle());
+			objectToPin.getBody().setTransform( pos[0] - offset[0], 
+												pos[1] - offset[1], 
+												objectToPin.getBody().getAngle());
 			objectToPin.getBody().setAwake(true);
 		}
 		
 		public void dispose(){
 			objectToPin = null;
-			indexPinned = -1;
 		}
 	} 
 	
@@ -76,15 +67,21 @@ public class GameManager {
 		MENU, CREATE, RUNNING, LEVELCHOOSER
 	}
 	
-	public GameManager(World world){
+	public GameManager(World world) throws FileNotFoundException{
 		
 		this.world = world;
 		currentState = GameState.MENU;
 		
+		try { encoder = new Encoder(); } 
+		catch(FileNotFoundException fe) 
+		{ 
+			Gdx.app.log("FileNotFound", fe.getMessage());
+			throw fe; 
+		}
+		
 		//server connect
 		//connection = new ClientInterface();
 		//connection.connectSocket();
-
 		
 		initGameObjects();
 		initWall();
@@ -96,13 +93,6 @@ public class GameManager {
 	 */
 	
 	private void initWall() {
-		BOUNDS = new Rect(
-				GameConstants.LEFTWALL,
-				GameConstants.FLOOR,
-				GameConstants.RIGHTWALL-GameConstants.LEFTWALL,
-				GameConstants.CEILING-GameConstants.FLOOR,
-									Color.WHITE,true);
-		BOUNDS.setOutlineColor(Color.WHITE);
 		
 		canvasBounds = new ArrayList<Vector2>();
 		
@@ -132,6 +122,7 @@ public class GameManager {
 		points = new ArrayList<IGameObject>();
 		joints = new ArrayList<IJoint>();
 		modifiers = new ArrayList<IModifier>();
+		fields = new ArrayList<Field>();
 	}
 	
 	/*
@@ -158,21 +149,25 @@ public class GameManager {
 	
 	// updating running game state
 	public void updateRunning(float delta) {
-		world.step(1f/45f, 6, 2);
-		updateSprings();
 		
-		for( IModifier m : modifiers){
-			m.update(points);
-		}
+		for (IJoint s : joints)
+			s.update(points);
 		
-		if ( pinner.indexPinned != -1 ){
+		for (IModifier m : modifiers)
+			m.update();
+		
+		for (Field f : fields)
+			f.update(points);
+		
+		if (isPinning())
 			pinner.pinObject();
-		}
+		
+		world.step(1f/45f, 6, 2); // update GameObjects
 	}
 	
 	// updating creating game state
 	public void updateCreate(float delta) {
-		if( pinner.indexPinned != -1 ){
+		if( isPinning() ){
 			pinner.pinObject();
 		}
 	}
@@ -182,16 +177,15 @@ public class GameManager {
 		//
 	}
 	
-	public void updateSprings(){
-		for(IJoint s : joints){
-			if(s instanceof Spring)
-				((Spring)s).update(points);
-		}
-	}
 
 	/*
 	 * Adders
 	 */
+	
+	public void addGameObject(IGameObject gameObject){
+		gameObject.initialize(world);
+		points.add(gameObject);
+	}
 	
 	/**
 	 * Adds a circle GameObject to the world. Can be a static or dynamic body.
@@ -199,31 +193,11 @@ public class GameManager {
 	 * @param radius radius of the circle
 	 * @param pinned whether or not to make static/dynamic
 	 */
-	public void addCircle(float [] pos, float radius, boolean pinned) {
-		Circle circle = new Circle.Constructor(pos, radius, pinned).Construct();
-		circle.initialize(world);
-		points.add(circle);
-		//connection.sendMessage("Circle sent");
-	}
 	
-	/**
-	 * Adds a rectangle GameObject to the world. Recieves two vertices as input. These serve
-	 * as opposite corners to the rectangle. 
-	 * @param pos1 corner of the rectangle.
-	 * @param pos2 opposite corner of the rectangle
-	 * @param pinned make it static/dynamic.
-	 */
-	public void addRectangle(float [] pos1, float [] pos2, boolean pinned){
-		
-		float x = pos1[0] > pos2[0] ? pos2[0] : pos1[0];
-		float y = pos1[1] > pos2[1] ? pos2[1] : pos1[1];
-		float width = pos1[0] > pos2[0] ? pos1[0] - x : pos2[0] - x;
-		float height = pos1[1] > pos2[1] ? pos1[1] - y : pos2[1] - y;
-		
-		Rectangle rectBody = new Rectangle.Constructor(x, y, width, height, pinned).Construct();
-		rectBody.initialize(world);
-		points.add(rectBody);
+	public void addField(Field field){
+		fields.add(field);
 	}
+
 	
 	/**
 	 * Creates a static GameObject chain. Can collide with other game objects, but is pinned.
@@ -242,70 +216,42 @@ public class GameManager {
 		points.add(chainBody);
 	}
 	
-	/**
-	 * creates a GameObject polygon from an ArrayList of Vector2. Can be pinned (static body).
-	 * @param vertices list of coordinates for each corner of the polygon.
-	 * @param pinned will make the body static or dynamic
-	 */
-	public void addPolygon(ArrayList<Vector2> vertices, boolean pinned){
-		
-		Vector2 vert[] = new Vector2[vertices.size()];
-		
-		for(int i = 0; i < vertices.size(); i++){
-			vert[i] = vertices.get(i);
-		}
-		
-		PolyBody polygonBody = new PolyBody.Constructor(vert, pinned).Construct();
-		polygonBody.initialize(world);
-		points.add(polygonBody);
-	}
-	
-	/**
-	 * adds a drawable velocity to a given GameObject.
-	 * @param index the index of the GameObject.
-	 * @param endPos the coordinates of the end of the velocity vector.
-	 */
-	public void addImpulse(int index, float [] endPos){
-
-		Vector2 beginPos = points.get(index).getBody().getPosition();
-		Impulse impulse = new Impulse(index, beginPos, new Vector2(endPos[0], endPos[1]));
-		impulse.initialize(points);
+	public void addVelocityToObject(IGameObject point, float [] endPos){
+		Vector2 beginPos = point.getBody().getPosition();
+		Velocity impulse = new Velocity(point, beginPos, new Vector2(endPos[0], endPos[1]));
+		impulse.initialize();
 		modifiers.add(impulse);		
 	}
 	
-	/**
-	 * adds a drawable force to a given GameObject.
-	 * @param index the index of the GameObject.
-	 * @param endPos the coordinates of the end of the force vector.
-	 */
-	public void addForce(int index, float [] endPos){
-		Vector2 beginPos = points.get(index).getBody().getPosition();
-		Force force = new Force(index, beginPos, new Vector2( endPos[0], endPos[1]));
-		force.initialize(points);
-		modifiers.add(force);		
+	
+	public void addVelocityToField(Field field, float [] endPos ){
+		
 	}
 	
-	/**
-	 * creates a drawable joint between two GameObjects that restricts the distance between them. 
-	 * @param ind1 index of first GameObject
-	 * @param ind2 index of second GameObject
-	 */
-	public void addStick(int ind1, int ind2){
-		Stick stick = new Stick(points,ind1,ind2);
-		stick.initialize(this);
+	public void addForceToObject(IGameObject point, float [] endPos){
+		Vector2 beginPos = point.getBody().getPosition();
+		Force force = new Force(point, beginPos, new Vector2( endPos[0], endPos[1]));
+		force.initialize();
+		modifiers.add(force);
+	}
+	
+	public void addForceToField(Field field, float [] endPos){
+		Vector2 beginPos = field.getCenter();
+		field.setModifier(new Force(null,beginPos,new Vector2(endPos[0],endPos[1])));
+	}
+	
+	public void addStick(IGameObject p1, IGameObject p2){
+		Stick stick = new Stick(p1,p2);
+		stick.initialize(world);
 		joints.add(stick);
 	}
 	
-	/**
-	 * creates a drawable linear spring between two GameObjects. 
-	 * @param ind1 index of first GameObject
-	 * @param ind2 index of second GameObject
-	 */
-	public void addSpring(int ind1, int ind2) {
-		joints.add(new Spring(points, ind1, ind2, GameConstants.SPRING_CONSTANT));
-		Gdx.app.log("Manager", "addSpring");
+	public void addSpring(IGameObject p1, IGameObject p2){
+		Spring spring = new Spring(p1,p2,GameConstants.SPRING_CONSTANT);
+		joints.add(spring);
 	}
 	
+	// TODO: implement 
 	public void rotateObject(int index, float degrees){
 		points.get(index).getBody().setTransform(points.get(index).getBody().getPosition().x, 
 				points.get(index).getBody().getPosition().y, points.get(index).getBody().getAngle() + degrees);		
@@ -329,8 +275,8 @@ public class GameManager {
 	 * Setters
 	 */
 	
-	public void pinObject(int index, float [] pos){
-		pinner.init(index, pos, points);
+	public void pinObject(IGameObject object, float [] pos){
+		pinner.init(object, pos);
 	}
 	
 	public void updatePinner( float [] mousePos){
@@ -357,13 +303,19 @@ public class GameManager {
 		currentState = GameState.CREATE;
 	}
 	
+	public void save(){
+		encoder.load(this);
+		encoder.Encode();
+		encoder.dispose();
+	}
+	
 
 	public void toggleCreative(){
 		if ( currentState == GameState.RUNNING){
 			currentState = GameState.CREATE;
 			for ( IModifier m : modifiers){
-				if (m instanceof Impulse)
-					((Impulse)m).update(points);
+				if (m instanceof Velocity)
+					((Velocity)m).update();
 			}
 		} else
 			currentState = GameState.RUNNING;
@@ -376,7 +328,9 @@ public class GameManager {
 		points = null;
 		joints = null;
 		modifiers = null;
+		fields = null;
 		initGameObjects();
+		initWall();
 		renderer.restart();
 		currentState = GameState.CREATE;
 	}
@@ -387,10 +341,6 @@ public class GameManager {
 	
 	public World getWorld(){
 		return world;
-	}
-	
-	public Rect getBounds(){
-		return BOUNDS;
 	}
 	
 	public ArrayList<IJoint> getJoints(){
@@ -405,6 +355,10 @@ public class GameManager {
 		return modifiers;
 	}
 	
+	public ArrayList<Field> getFields(){
+		return fields;
+	}
+	
 	public boolean isMenu(){
 		return currentState == GameState.MENU;
 	}
@@ -415,5 +369,10 @@ public class GameManager {
 	
 	public boolean isRunning(){
 		return currentState == GameState.RUNNING;
+	}
+
+
+	public boolean isPinning() {
+		return pinner.objectToPin != null;
 	}
 }

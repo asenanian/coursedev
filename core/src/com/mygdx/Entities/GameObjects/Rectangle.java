@@ -1,16 +1,17 @@
-package com.mygdx.Entities;
+package com.mygdx.Entities.GameObjects;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.mygdx.game.shared.rectanglePacket;
+import com.mygdx.managers.AssetLoader;
 
 public class Rectangle implements IGameObject{
 	private final float x;
@@ -21,7 +22,7 @@ public class Rectangle implements IGameObject{
 	private final float restitution;
 	private final float friction;
 	private final float density;
-	private final Color color;
+	private final TextureRegion textureRegion;
 	
 	private Body body;
 	private Fixture fixture;
@@ -75,15 +76,14 @@ public class Rectangle implements IGameObject{
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
-		color = pinned ? Color.BLACK : Color.MAROON;
+		textureRegion = pinned ? AssetLoader.rectanglePinned : AssetLoader.rectangle;
+
 	}
 	
 	@Override
 	public void initialize(World world){
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = pinned ? BodyDef.BodyType.StaticBody : BodyDef.BodyType.DynamicBody;
-		Gdx.app.log("width", ""+width);
-		Gdx.app.log("height", ""+height);
 		bodyDef.position.set(x + width,y + height);
 		
 		body = world.createBody(bodyDef);
@@ -101,11 +101,9 @@ public class Rectangle implements IGameObject{
 	}
 	
 	@Override
-	public void draw(ShapeRenderer shapeRenderer){
-		float longside = width > height ? width : height;
-		shapeRenderer.set(ShapeType.Filled);
-		shapeRenderer.setColor(this.color);
-		shapeRenderer.rect(
+	public void draw( SpriteBatch batcher){
+		
+		batcher.draw(textureRegion, 
 				(body.getPosition().x - width), 
 				(body.getPosition().y - height), 
 				width, 
@@ -113,31 +111,22 @@ public class Rectangle implements IGameObject{
 				width*2,
 				height*2,
 				1f,1f,(float)(Math.toDegrees(body.getAngle())));
-		float nwidth = width - (.2f*width/longside);
-		float nheight = height - (.2f*height/longside);
-		shapeRenderer.setColor(this.color.cpy().mul(.9f));
-		shapeRenderer.rect(
-				(body.getPosition().x - nwidth), 
-				(body.getPosition().y - nheight), 
-				nwidth, 
-				nheight, 
-				nwidth*2,
-				nheight*2,
-				1f,1f,(float)(Math.toDegrees(body.getAngle())));
+
 	}
 	
 	@Override
-	public void drawShadows(ShapeRenderer shapeRenderer, SpriteBatch batcher){
-		shapeRenderer.set(ShapeType.Filled);
-		shapeRenderer.setColor(50/255f,50/255f,50/255f,0.1f);
-		shapeRenderer.rect(
-				(body.getPosition().x - 0.1f - width), 
-				(body.getPosition().y - 0.15f - height), 
-				width, 
-				height, 
-				width*2,
-				height*2,
-				1f,1f,(float)(Math.toDegrees(body.getAngle())));
+	public void drawShadows(SpriteBatch batcher){
+		
+		Sprite sprite = new Sprite(AssetLoader.rectangleShadow);
+		sprite.setPosition(body.getPosition().x - (width/(128))*(128 + 60 ), 
+				body.getPosition().y - (height/(128))*(128 + 60));
+		sprite.setSize(  (width*2/(256))*(216 + 120),
+						 (height*2/(256))*(216 + 120));
+		sprite.setOrigin((width/(128))*(108 + 60), 
+				 		 (height/(128))*(108 + 60));
+		//sprite.setScale(xscale,yscale);
+		sprite.setRotation((float)(Math.toDegrees(body.getAngle())));
+		sprite.draw(batcher);		
 	}
 	
 	@Override
@@ -181,5 +170,10 @@ public class Rectangle implements IGameObject{
 	@Override
 	public float getWidth(){
 		return this.width;
+	}
+	
+	@Override
+	public Object getPacket(){
+		return new rectanglePacket(x,y,width,height,pinned);
 	}
 }

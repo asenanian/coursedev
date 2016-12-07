@@ -7,25 +7,31 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.PolygonRegion;
+import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.EarClippingTriangulator;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.ShortArray;
 import com.badlogic.gdx.InputMultiplexer;
 
 
-import com.mygdx.Entities.IJoint;
-import com.mygdx.Entities.IModifier;
-import com.mygdx.Entities.IGameObject;
-import com.mygdx.Entities.Rect;
+import com.mygdx.Entities.Joints.IJoint;
+import com.mygdx.Entities.Modifiers.Field;
+import com.mygdx.Entities.Modifiers.IModifier;
+import com.mygdx.Entities.GameObjects.PolyBody;
+import com.mygdx.Entities.GameObjects.IGameObject;
 
 import com.mygdx.GameWorld.GameConstants;
 import com.mygdx.GameWorld.GameManager;
 
 import com.mygdx.managers.AssetLoader;
-import com.mygdx.managers.GameInputProcessor;
+import com.mygdx.managers.GameInputManager;
 import com.mygdx.managers.MenuInputProcessor;
 
 import com.mygdx.ui.SimpleButton;
@@ -39,18 +45,29 @@ public class GameRenderer {
 	private ArrayList<IGameObject> points;
 	private ArrayList<IJoint> joints;
 	private ArrayList<IModifier> modifiers;
-	private Rect bounds;
+	private ArrayList<Field> fields;
 	
 	// Buttons
-	private HashMap<String,SimpleButton> toolbar;
+	private HashMap<String,SimpleButton> toolBar;
+	private HashMap<String,SimpleButton> modifierBar;
 	private HashMap<String,SimpleButton> controlBar;
 	private HashMap<String,SimpleButton> menuButtons;
-
+	
+	//  Cameras
 	private OrthographicCamera uiCam;
 	private OrthographicCamera worldCam;
-	private ShapeRenderer shapeRenderer;
-	private SpriteBatch batcher;
-	//private Box2DDebugRenderer debugRenderer = new Box2DDebugRenderer()
+	
+	// batchers/ renderers
+	private ShapeRenderer worldRenderer;
+	private ShapeRenderer screenRenderer;
+	private SpriteBatch worldBatcher;
+	private SpriteBatch screenBatcher;
+	private Box2DDebugRenderer debugRenderer = new Box2DDebugRenderer();
+	
+	// Polygon Rendering
+	private EarClippingTriangulator triangulator = new EarClippingTriangulator();
+	private PolygonSpriteBatch polyBatch;
+	private PolygonRegion polyReg;
 
 	
 	private State state;
@@ -72,14 +89,28 @@ public class GameRenderer {
 		uiCam.position.set(GameConstants.WIDTH/2,GameConstants.HEIGHT/2,0);
 		uiCam.update();
 		
+		screenBatcher = new SpriteBatch();
+		screenBatcher.setProjectionMatrix(uiCam.combined);
+
+		screenRenderer = new ShapeRenderer();
+		screenRenderer.setAutoShapeType(true);
+		screenRenderer.setProjectionMatrix(uiCam.combined);
+		
 		// camera with world coordinates
 		worldCam = new OrthographicCamera( 30f, 30f * (h / w));
-		worldCam.position.set(worldCam.viewportWidth / 2f, GameConstants.W_HEIGHT - worldCam.viewportHeight / 2f, 0);
+		worldCam.position.set(worldCam.viewportWidth / 2f - 5, worldCam.viewportHeight / 2f -5,0);
 		worldCam.update();
 		
-		batcher = new SpriteBatch();
-		shapeRenderer = new ShapeRenderer();
-		shapeRenderer.setAutoShapeType(true);
+		worldBatcher = new SpriteBatch();
+		worldBatcher.setProjectionMatrix(worldCam.combined);
+		
+		polyBatch = new PolygonSpriteBatch();
+		polyBatch.setProjectionMatrix(worldCam.combined);
+		
+		worldRenderer = new ShapeRenderer();
+		worldRenderer.setAutoShapeType(true);
+		worldRenderer.setProjectionMatrix(worldCam.combined);
+
 					
 		initGameObjects();
 	}
@@ -87,110 +118,115 @@ public class GameRenderer {
 	private void initGameObjects(){
 		points = manager.getPoints();
 		joints = manager.getJoints();
-		bounds = manager.getBounds();
 		modifiers = manager.getModifiers();
+		fields = manager.getFields();
 	}
 	
 	public void initButtons(){
 		// buttons
-		this.toolbar = ((GameInputProcessor)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getToolbar();
-		this.controlBar = ((GameInputProcessor)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getControlBar();
+		this.toolBar = ((GameInputManager)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getToolbar();
+		this.modifierBar = ((GameInputManager)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getModifierBar();
+		this.controlBar = ((GameInputManager)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getControlBar();
 		this.menuButtons = ((MenuInputProcessor)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(0)).getMenuButtons();
 	}
 	
 	public void render(float delta, float runTime){
 		
 		worldCam.update();
+		worldBatcher.setProjectionMatrix(worldCam.combined);
+		polyBatch.setProjectionMatrix(worldCam.combined);
+		worldRenderer.setProjectionMatrix(worldCam.combined);
         
 		Gdx.gl.glEnable(GL20.GL_BLEND);
 		Gdx.gl.glClearColor(79/255f, 190/255f, 241/255f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);    
         Gdx.gl.glLineWidth(2);
         
-        batcher.setProjectionMatrix(uiCam.combined);
-        batcher.begin();
+        screenBatcher.begin();
+        screenBatcher.disableBlending();
         drawBackground();
-		batcher.end();
+        screenBatcher.enableBlending();
+		screenBatcher.end();
         
         if(manager.isCreate() || manager.isRunning()){
         	
-        	// draw in physics coordinates
-        	shapeRenderer.setProjectionMatrix(worldCam.combined);
-        	batcher.setProjectionMatrix(worldCam.combined);
-        	
-        	batcher.begin();
-        	shapeRenderer.begin();
-        	drawCanvas();
-        	shapeRenderer.end();
-        	batcher.end();
+        	// draw in physics coordinates        	
+        	worldBatcher.begin();
+    		for( IGameObject body : points){
+    			body.drawShadows(worldBatcher);
+    		}
+    		for( IGameObject body : points ){ 
+    			body.draw(worldBatcher);
+    		}
+
+    		for ( Field field : fields ){
+    			field.draw(worldBatcher);
+    		}
+    		worldBatcher.end();
+    		
+        	worldRenderer.begin();
+        	drawCanvasShapes();        	
+        	worldRenderer.end();
         	
         	//draw in screen coordinates
-        	shapeRenderer.setProjectionMatrix(uiCam.combined);
-        	shapeRenderer.begin();
+        	screenRenderer.begin();
         	drawToolbar();
-        	shapeRenderer.end();
+        	screenRenderer.end();
+        	
         } 
         Gdx.gl.glDisable(GL20.GL_BLEND);
         
         //draw sprites
-    	batcher.setProjectionMatrix(uiCam.combined);
-        batcher.begin();
+        screenBatcher.begin();
         if(manager.isCreate() || manager.isRunning()){
         	drawUISprites();
 		}
         else if(manager.isMenu()){
         	drawMenuSprites();
         }
-        batcher.end();
+        screenBatcher.end();
         
         /* DEBUG 
-        canvasRenderer.begin(); 
-        canvasRenderer.circle(mouse.x, mouse.y, 0.1f);
-        canvasRenderer.end();
         debugRenderer.render(manager.getWorld(), worldCam.combined);
         /* ********************************* */
 	}
 	
-
-	
 	public void drawBackground(){
 		if(manager.isCreate() || manager.isRunning())
-			batcher.draw(AssetLoader.background, 0,0,GameConstants.WIDTH, GameConstants.HEIGHT);
+			screenBatcher.draw(AssetLoader.background, 0,0,GameConstants.WIDTH, GameConstants.HEIGHT);
 	}
 	
 	public void drawMenuSprites(){
 		for (SimpleButton b : menuButtons.values()) {
-			b.draw(batcher);
+			b.draw(screenBatcher);
 		}
 	}
 	
-	public void drawCanvas() {
-		shapeRenderer.set(ShapeType.Line);
-		shapeRenderer.setColor(Color.WHITE);
-		shapeRenderer.rect(0, 0, 100, 100);
+	public void drawCanvasShapes() {
 		
 		if ( manager.isCreate()) drawModifiers();
 		drawJoints();
 		drawPoints();
 
 		// object builder activated by input processor
+		
 		switch(state){
 		case NONE:
 			break;
 		case CIRCLE:
-			builder.drawCircle(shapeRenderer);
+			builder.drawCircle(worldRenderer);
 			break;
 		case RECTANGLE:
-			builder.drawRectangle(shapeRenderer);
+			builder.drawRectangle(worldRenderer);
 			break;
 		case JOINT:
-			builder.drawJoint(shapeRenderer);
+			builder.drawJoint(worldRenderer);
 			break;
 		case MODIFIER:
-			builder.drawModifier(shapeRenderer);
+			builder.drawModifier(worldRenderer);
 			break;
 		case PATH:
-			builder.drawPath(shapeRenderer);
+			builder.drawPath(worldRenderer);
 			break;
 		default:
 			break;
@@ -198,16 +234,27 @@ public class GameRenderer {
 
 	}
 	
+	public void drawToolbar(){
+		screenRenderer.set(ShapeType.Filled);
+		screenRenderer.setColor(new Color(64/255f, 64/255f, 64/255f, 1f));
+		screenRenderer.rect(0, 0, GameConstants.WIDTH , GameConstants.LC_HEIGHT + GameConstants.LC_PADDING + 5);
+		screenRenderer.setColor(new Color(128/255f, 128/255f, 128/255f, 1f));
+		//screenRenderer.rect(0, height + padding, width, padding);
+	}
+	
 	public void drawUISprites() {
-		for (SimpleButton b : toolbar.values()) {
-			b.draw(batcher);
+		for (SimpleButton b : toolBar.values()) {
+			b.draw(screenBatcher);
 		}
 		for (SimpleButton b : controlBar.values()) {
-			b.draw(batcher);
+			b.draw(screenBatcher);
+		}
+		for (SimpleButton b : modifierBar.values()){
+			b.draw(screenBatcher);
 		}
 		switch(state){
 		case MODIFIER:
-			builder.drawModifierText(batcher, worldCam);
+			builder.drawModifierText(screenBatcher, worldCam);
 			break;
 		case NONE:
 			break;
@@ -216,40 +263,35 @@ public class GameRenderer {
 		}
 	}
 	
-	public void drawToolbar(){
-		shapeRenderer.set(ShapeType.Filled);
-		shapeRenderer.setColor(64/255f, 64/255f, 64/255f, 1);
-		shapeRenderer.rect(0, 0, GameConstants.WIDTH, GameConstants.LC_HEIGHT + GameConstants.LC_PADDING+5);
-		shapeRenderer.setColor(128/255f, 128/255f, 128/255f, 1);
-		shapeRenderer.rect(0, GameConstants.LC_HEIGHT + GameConstants.LC_PADDING + 5, 
-				GameConstants.WIDTH, 5);
-	}
-
-	public void drawBounds() {
-		shapeRenderer.set(ShapeType.Filled);
-		bounds.draw(shapeRenderer);
-	}
-	
 	public void drawJoints() {
-		shapeRenderer.set(ShapeType.Filled);//for filled rectline
+		worldRenderer.set(ShapeType.Filled);//for filled rectline
 	    for (IJoint j : joints ) {
-    		j.draw(manager.getPoints(),shapeRenderer);
+    		j.draw(manager.getPoints(),worldRenderer);
 	    }
 	}
 	
 	public void drawModifiers(){
-		shapeRenderer.set(ShapeType.Filled);
+		worldRenderer.set(ShapeType.Filled);
 		for(IModifier m : modifiers) 
-			m.draw(manager.getPoints(), shapeRenderer);
+			m.draw(worldRenderer);
 	}
 	
 	public void drawPoints(){
-		shapeRenderer.set(ShapeType.Filled);
-		for( IGameObject body : points){
-			body.drawShadows(shapeRenderer, batcher);
-		}
+		worldRenderer.set(ShapeType.Filled);
+
 		for( IGameObject body : points ){
-			body.draw(shapeRenderer);
+
+			if (body instanceof PolyBody){
+
+				float vertices [] = ((PolyBody) body).getVertices();
+				ShortArray triangleIndices = triangulator.computeTriangles(vertices);
+				
+				polyReg = new PolygonRegion(AssetLoader.rectangle, vertices, triangleIndices.toArray());
+
+				polyBatch.begin();
+				polyBatch.draw(polyReg, 0, 0);
+				polyBatch.end();
+			}
 		}
 	}
 	
@@ -315,13 +357,18 @@ public class GameRenderer {
 	}
 	
 	private void clampCamera(){
-		worldCam.zoom = MathUtils.clamp(worldCam.zoom, 0.1f, 100/worldCam.viewportWidth);
+		worldCam.zoom = MathUtils.clamp(worldCam.zoom, 0.1f, 120/worldCam.viewportWidth);
 		
 		float effectiveViewportWidth = worldCam.viewportWidth*worldCam.zoom;
 		float effectiveViewportHeight = worldCam.viewportHeight*worldCam.zoom;
 		
 		// clamp the camera to a 100 x 100 square (meters)
-		worldCam.position.x = MathUtils.clamp(worldCam.position.x, effectiveViewportWidth / 2f, GameConstants.W_WIDTH - effectiveViewportWidth / 2f);
-		worldCam.position.y = MathUtils.clamp(worldCam.position.y, effectiveViewportHeight / 2f, GameConstants.W_HEIGHT - effectiveViewportHeight / 2f);
+		worldCam.position.x = MathUtils.clamp(worldCam.position.x, effectiveViewportWidth / 2f - 5, GameConstants.W_WIDTH - effectiveViewportWidth / 2f + 5);
+		worldCam.position.y = MathUtils.clamp(worldCam.position.y, effectiveViewportHeight / 2f - 5, GameConstants.W_HEIGHT - effectiveViewportHeight / 2f + 5);
+	}
+	
+	public void dispose(){
+		screenBatcher.dispose();
+		screenRenderer.dispose();
 	}
 }

@@ -7,7 +7,7 @@ import com.mygdx.managers.AssetLoader;
 
 public class LevelCreatorUI {
 	
-	public void load(HashMap<String,SimpleButton> toolBar, HashMap<String,SimpleButton> controlBar) {
+	public void load(HashMap<String,SimpleButton> toolBar, HashMap<String,SimpleButton> controlBar, HashMap<String,SimpleButton> modifierBar) {
 		
 		//move tool button
 		toolBar.put("MOVE", new SimpleButton(
@@ -22,7 +22,7 @@ public class LevelCreatorUI {
 				AssetLoader.circleButtonUp,AssetLoader.circleButtonDown));
 		
 		//rectangle
-		toolBar.put("RECT", new SimpleButton(
+		toolBar.put("RECTANGLE", new SimpleButton(
 				3*GameConstants.LC_PADDING + 2*GameConstants.LC_WIDTH, GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
 				AssetLoader.rectangleButtonUp,AssetLoader.rectangleButtonDown));
@@ -64,16 +64,22 @@ public class LevelCreatorUI {
 				AssetLoader.forceButtonUp,AssetLoader.forceButtonDown));
 		
 		//pinned tool button
-		toolBar.put("PINNED", new SimpleButton(
+		modifierBar.put("PINNED", new SimpleButton(
 				10*GameConstants.LC_PADDING + 9*GameConstants.LC_WIDTH, GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
 				AssetLoader.pinnedButtonUp,AssetLoader.pinnedButtonDown));
 		
 		//hidden support
-		toolBar.put("HIDDEN", new SimpleButton(
+		modifierBar.put("HIDDEN", new SimpleButton(
 				11*GameConstants.LC_PADDING + 10*GameConstants.LC_WIDTH, GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
 				AssetLoader.hiddenButtonUp,AssetLoader.hiddenButtonDown));
+		
+		//regional Modifier support
+		toolBar.put("FIELD", new SimpleButton(
+				12*GameConstants.LC_PADDING + 11*GameConstants.LC_WIDTH, GameConstants.LC_PADDING, 
+				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
+				AssetLoader.rectangleButtonUp,AssetLoader.rectangleButtonDown));
 				
 		//play/pause button (start it off showing play button)
 		controlBar.put("RUN", new SimpleButton(
@@ -84,6 +90,12 @@ public class LevelCreatorUI {
 		//clear screen button
 		controlBar.put("RESTART", new SimpleButton(
 				GameConstants.WIDTH - 2*GameConstants.LC_WIDTH - 2*GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
+				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
+				AssetLoader.restartButtonUp,AssetLoader.restartButtonDown));
+		
+		//save button
+		controlBar.put("SAVE", new SimpleButton(
+				GameConstants.WIDTH - 3*GameConstants.LC_WIDTH - 3*GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
 				AssetLoader.restartButtonUp,AssetLoader.restartButtonDown));
 	}

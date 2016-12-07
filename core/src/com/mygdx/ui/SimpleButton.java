@@ -74,7 +74,4 @@ public class SimpleButton {
 		return false;
 	}
 	
-	public void action(){
-		
-	}
 }

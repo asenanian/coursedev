@@ -1,41 +1,36 @@
-package com.mygdx.Entities;
-
-import java.util.ArrayList;
+package com.mygdx.Entities.Modifiers;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
+import com.mygdx.Entities.GameObjects.IGameObject;
 import com.mygdx.GameWorld.GameConstants;
 
-public class Force implements IModifier{
-	private int index;
+public class Force implements IModifier {
 	private Vector2 vector;
+	private IGameObject gameObject;
 	
-	public Force(int index, Vector2 beginPos, Vector2 endPos){
-		this.index = index;
+	public Force(IGameObject gameObject, Vector2 beginPos, Vector2 endPos){
 		this.vector = new Vector2(endPos.x - beginPos.x, endPos.y - beginPos.y);
+		this.gameObject = gameObject;
 	}
 	
 	@Override
-	public boolean isLarge(ArrayList<IGameObject> points){
-		return true;
+	public void initialize(){
+		//
 	}
 	
 	@Override
-	public void initialize(ArrayList<IGameObject> points){
-		points.get(index).getBody().applyForce(vector.cpy().scl(10*GameConstants.MODIFIER_SCL), points.get(index).getBody().getPosition(), true);
+	public void update(){
+		if (gameObject == null) return;
+		gameObject.getBody().applyForceToCenter(vector.cpy().scl(GameConstants.MODIFIER_SCL), true);
 	}
 	
 	@Override
-	public void update(ArrayList<IGameObject> points){
-		points.get(index).getBody().applyForceToCenter(vector.cpy().scl(GameConstants.MODIFIER_SCL), true);
-	}
-	
-	@Override
-	public void draw(ArrayList<IGameObject> points, ShapeRenderer shapeRenderer){
+	public void draw(ShapeRenderer shapeRenderer){
 		
-		Vector2 pos1 = points.get(index).getBody().getPosition().cpy();
+		Vector2 pos1 = gameObject.getBody().getPosition().cpy();
 		Vector2 pos2 = new Vector2(pos1.cpy().add(vector));
 		Vector2 triPoint = vector.cpy().setLength(GameConstants.MODIFIER_WIDTH*4);
 		
@@ -49,6 +44,11 @@ public class Force implements IModifier{
 				pos2.y + triPoint.cpy().rotate90(-1).y, 
 				pos2.x + triPoint.x, 
 				pos2.y + triPoint.y);
+	}
+
+	@Override
+	public void setGameObject(IGameObject gameObject) {
+		this.gameObject = gameObject;		
 	}
 
 }

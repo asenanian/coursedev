@@ -29,7 +29,7 @@ class Builder {
 		this.endY = y;
 	}
 	
-	public void init( float x, float y, ArrayList<Vector2> path){
+	public void init(float x, float y, ArrayList<Vector2> path){
 		this.beginX = x;
 		this.beginY = y;
 		this.endX = x;

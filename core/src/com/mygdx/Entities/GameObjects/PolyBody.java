@@ -1,9 +1,6 @@
-package com.mygdx.Entities;
+package com.mygdx.Entities.GameObjects;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -18,7 +15,6 @@ public class PolyBody implements IGameObject{
 	private final float restitution;
 	private final float friction;
 	private final float density;
-	private final Color color;
 	private final boolean pinned;
 	
 	private Body body;
@@ -61,7 +57,6 @@ public class PolyBody implements IGameObject{
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
-		color = pinned? Color.BLACK: Color.MAROON;
 	}
 	
 	@Override
@@ -78,11 +73,6 @@ public class PolyBody implements IGameObject{
 		
 		PolygonShape polyShape = new PolygonShape();
 		polyShape.set(vertices);
-		/*
-		for(int i = 1; i < vertices.length - 1; i++){
-			chainShape.setNextVertex(vertices[i]);
-		}
-		*/		
 		
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = polyShape;
@@ -105,27 +95,15 @@ public class PolyBody implements IGameObject{
 	}
 	
 	@Override
-	public void draw(ShapeRenderer shapeRenderer){		
-		bounds.translate(0.05f, 0.05f);
-
-		//Gdx.app.log("",body.getPosition().x + "," +body.getPosition().y);
-		shapeRenderer.setColor(this.color);
-		shapeRenderer.set(ShapeType.Filled);
-		shapeRenderer.polygon(bounds.getTransformedVertices());
-		
+	public void draw(SpriteBatch batcher){		
+		bounds.setPosition(body.getPosition().x, body.getPosition().y);
+		bounds.setRotation((float)(Math.toDegrees(body.getAngle())));
+		//bounds.translate(0.05f, 0.05f);
 	}
 	
 	@Override
-	public void drawShadows(ShapeRenderer shapeRenderer, SpriteBatch batcher){
-		bounds.setPosition(body.getPosition().x, body.getPosition().y);
-		bounds.setRotation((float)(Math.toDegrees(body.getAngle())));
-		
-		
-		//Gdx.app.log("",body.getPosition().x + "," +body.getPosition().y);
-		shapeRenderer.setColor(50/255f,50/255f,50/255f,0.5f);
-		shapeRenderer.set(ShapeType.Line);
-		
-		shapeRenderer.polyline(bounds.getTransformedVertices());
+	public void drawShadows(SpriteBatch batcher){
+
 	}
 	
 	@Override	
@@ -156,5 +134,15 @@ public class PolyBody implements IGameObject{
 	@Override
 	public float getHeight(){
 		return this.density;
+	}
+	
+	public float [] getVertices(){
+		return bounds.getTransformedVertices();
+	}
+
+	@Override
+	public Object getPacket() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

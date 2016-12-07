@@ -1,9 +1,7 @@
-package com.mygdx.Entities;
+package com.mygdx.Entities.GameObjects;
 
-import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -12,13 +10,14 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
 import com.mygdx.GameWorld.GameConstants;
+import com.mygdx.managers.AssetLoader;
 
 public class Chain implements IGameObject{
 	private final Vector2 [] vertices;
 	private final float restitution;
 	private final float friction;
 	private final float density;
-	private final Color color;
+	private final float width = GameConstants.MODIFIER_WIDTH / 2f; // distance from center to edge
 	
 	private Body body;
 	private Fixture fixture;
@@ -33,7 +32,6 @@ public class Chain implements IGameObject{
 		private float density = 1.0f;
 		
 		public Constructor(Vector2 [] vertices){
-
 			this.vertices = vertices;	
 		}
 		
@@ -56,7 +54,6 @@ public class Chain implements IGameObject{
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
-		color = Color.BLACK;
 	}
 	
 	@Override
@@ -81,25 +78,39 @@ public class Chain implements IGameObject{
 	}
 	
 	@Override
-	public void draw(ShapeRenderer shapeRenderer){
-
-		shapeRenderer.setColor(this.color);
-		shapeRenderer.set(ShapeType.Filled);
+	public void draw(SpriteBatch batcher){
+		Sprite sprite = new Sprite(AssetLoader.chain);
+		sprite.setOrigin(0, 0);
 		
 		for(int i = 0 ; i < vertices.length - 1; i++){
-			shapeRenderer.rectLine(vertices[i],	vertices[i+1], GameConstants.MODIFIER_WIDTH);
+			
+			Vector2 diff = vertices[i+1].cpy().sub(vertices[i]);
+			
+			sprite.setPosition(vertices[i].x, vertices[i].y - width);
+			sprite.setSize(diff.len(), width*2);
+
+			sprite.setRotation(diff.angle());
+			sprite.draw(batcher);
 		}
+		
 	}
 	
 	@Override
-	public void drawShadows(ShapeRenderer shapeRenderer, SpriteBatch batcher){
-
-		shapeRenderer.setColor(50/255f,50/255f,50/255f,0.5f);
-		shapeRenderer.set(ShapeType.Filled);
+	public void drawShadows(SpriteBatch batcher){
+		Sprite sprite = new Sprite(AssetLoader.chainShadow);
+		sprite.setOrigin(0, 0 );
 		
 		for(int i = 0 ; i < vertices.length - 1; i++){
-			shapeRenderer.rectLine(vertices[i].x - 0.05f, vertices[i].y - 0.05f, vertices[i+1].x - 0.05f, vertices[i+1].y - 0.05f, GameConstants.MODIFIER_WIDTH);
+			Vector2 diff = vertices[i+1].cpy().sub(vertices[i]);
+			
+			sprite.setPosition(vertices[i].x - ( width / 32 ) * (32 + 60), 
+					vertices[i].y - ( width / 32 ) * (32 + 60) );
+			sprite.setSize(diff.len(), (width / 32) * ( 60 + 10 + 60));
+
+			sprite.setRotation(diff.angle());
+			sprite.draw(batcher);
 		}
+
 	}
 	
 	@Override
@@ -130,5 +141,11 @@ public class Chain implements IGameObject{
 	@Override
 	public float getHeight(){
 		return this.density;
+	}
+
+	@Override
+	public Object getPacket() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

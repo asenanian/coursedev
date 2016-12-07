@@ -9,7 +9,7 @@ import com.github.czyzby.websocket.WebSocketListener;
 import com.github.czyzby.websocket.WebSockets;
 import com.github.czyzby.websocket.WebSocketHandler.Handler;
 import com.github.czyzby.websocket.serialization.impl.ManualSerializer;
-import com.mygdx.Entities.Circle;
+import com.mygdx.Entities.GameObjects.*;
 import com.mygdx.game.shared.MyPackets;
 import com.mygdx.game.shared.actionPacket;
 import com.mygdx.game.shared.circlePacket;

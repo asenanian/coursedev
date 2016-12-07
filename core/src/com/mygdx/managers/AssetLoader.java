@@ -24,9 +24,18 @@ public class AssetLoader {
 	circleButtonUp, circleButtonDown, panButtonDown, panButtonUp, pathButtonUp, pathButtonDown, rectangleButtonUp, rectangleButtonDown, velocityButtonUp,
 	velocityButtonDown, forceButtonUp, forceButtonDown ;
 	
-	public static TextureRegion circle, circleShadow;
+	public static TextureRegion circle, circlePinned, circleShadow, rectangle, rectanglePinned, 
+	rectangleShadow, rectangleShadowLandscape, rectangleShadowPortrait, chain, chainShadow, region;
 	
 	public static TextureRegion menuPlayButtonUp, menuPlayButtonDown, menuQuitButtonUp, menuQuitButtonDown;
+	
+	private static final int DIAMETER = 256;
+	private static final int PADDING = 4;
+	private static final int SHADOW_DIAMETER = 216;
+	private static final int SHADOW_SPREAD = 60;
+	private static final int PATH_DIAMETER = 40;
+	private static final int PATH_SHADOW_DIAMETER = 10;
+	
 	
 	public static void load(){
 		
@@ -106,12 +115,31 @@ public class AssetLoader {
 		background.setFilter(TextureFilter.Linear,TextureFilter.Linear);
 		
 		// game objects texture
-		gameObjects = new Texture(Gdx.files.internal("GameObjects/circle.png"));
-		gameObjects.setFilter(TextureFilter.Nearest,TextureFilter.Nearest);
+		gameObjects = new Texture(Gdx.files.internal("GameObjects/gameObjects.png"));
+		gameObjects.setFilter(TextureFilter.Linear,TextureFilter.Linear);
+		
+		// rectangle
+		rectangle = new TextureRegion(gameObjects, PADDING, PADDING, DIAMETER, DIAMETER);
+		rectanglePinned = new TextureRegion(gameObjects, 2*PADDING + DIAMETER, PADDING, DIAMETER, DIAMETER);
+		rectangleShadow = new TextureRegion(gameObjects, 3*PADDING + 2*DIAMETER, PADDING, 
+				SHADOW_DIAMETER + 2*SHADOW_SPREAD, SHADOW_DIAMETER + 2*SHADOW_SPREAD);
 		
 		// circle
-		circle = new TextureRegion(gameObjects,0,0,128,128);
-		circleShadow = new TextureRegion(gameObjects,0,130,128+40,128+15+29);
+		circle = new TextureRegion(gameObjects, PADDING, PADDING + DIAMETER + PADDING, DIAMETER, DIAMETER);
+		circlePinned = new TextureRegion(gameObjects, 2*PADDING + DIAMETER, 2*PADDING + DIAMETER, DIAMETER, DIAMETER);
+		circleShadow = new TextureRegion(gameObjects, 3*PADDING + 2*DIAMETER, 2*PADDING + 2*SHADOW_SPREAD + SHADOW_DIAMETER, 
+				SHADOW_DIAMETER + 2*SHADOW_SPREAD, SHADOW_DIAMETER + 2*SHADOW_SPREAD);
+		
+		// chain
+		chainShadow = new TextureRegion(gameObjects, PADDING, 3*PADDING + 4*SHADOW_SPREAD + 2*SHADOW_DIAMETER, 
+				860, PATH_SHADOW_DIAMETER + 2*SHADOW_SPREAD);
+		chain = new TextureRegion(gameObjects, PADDING, chainShadow.getRegionY() + chainShadow.getRegionHeight() + PADDING, 
+				848, PATH_DIAMETER);
+		
+		// region
+		region = new TextureRegion(gameObjects,512 + 10 + 60 , 60, 216,216 );
+		
+		
 	}
 	
 	public static void dispose(){
