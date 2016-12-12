@@ -29,11 +29,7 @@ public class GameScreen implements Screen {
 		Box2D.init();
 		
 		world = new World(new Vector2(0,-GameConstants.GRAVITY),true);
-		try { manager = new GameManager(world); }
-		catch(FileNotFoundException fe)
-		{
-			Gdx.app.log("FileNotFound", fe.getMessage());
-		}
+		manager = new GameManager(world);
 		renderer = new GameRenderer(manager);
 		
 		InputMultiplexer multiplexer = new InputMultiplexer();

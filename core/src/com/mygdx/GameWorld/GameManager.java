@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 
@@ -13,7 +12,8 @@ import com.mygdx.Entities.Joints.*;
 import com.mygdx.Entities.Modifiers.*;
 import com.mygdx.Renderer.GameRenderer;
 import com.mygdx.managers.ClientInterface;
-import com.mygdx.managers.Encoder;
+import com.mygdx.XMLService.XMLDeserializer;
+import com.mygdx.XMLService.XMLSerializer;
 
 public class GameManager {
 	
@@ -23,11 +23,12 @@ public class GameManager {
 	private GameRenderer renderer;
 	private World world;
 	private Pinner pinner = new Pinner();
-	private Encoder encoder;
+	private XMLSerializer encoder;
+	private XMLDeserializer decoder;
 	
 	// Actors
 	private ArrayList<IJoint> joints;
-	private ArrayList<Vector2> canvasBounds;
+	private ArrayList<Chain> bounds;
 	private ArrayList<IGameObject> points;
 	private ArrayList<IModifier> modifiers;
 	private ArrayList<Field> fields;
@@ -67,17 +68,10 @@ public class GameManager {
 		MENU, CREATE, RUNNING, LEVELCHOOSER
 	}
 	
-	public GameManager(World world) throws FileNotFoundException{
+	public GameManager(World world) {
 		
 		this.world = world;
 		currentState = GameState.MENU;
-		
-		try { encoder = new Encoder(); } 
-		catch(FileNotFoundException fe) 
-		{ 
-			Gdx.app.log("FileNotFound", fe.getMessage());
-			throw fe; 
-		}
 		
 		//server connect
 		//connection = new ClientInterface();
@@ -94,27 +88,10 @@ public class GameManager {
 	
 	private void initWall() {
 		
-		canvasBounds = new ArrayList<Vector2>();
-		
-		canvasBounds.add(new Vector2(0,0));
-		canvasBounds.add(new Vector2(100,0));
-		addChain(canvasBounds);
-		canvasBounds.clear();
-		
-		canvasBounds.add(new Vector2(GameConstants.W_WIDTH,0));
-		canvasBounds.add(new Vector2(GameConstants.W_WIDTH,GameConstants.W_HEIGHT));
-		addChain(canvasBounds);
-		canvasBounds.clear();
-		
-		canvasBounds.add(new Vector2(GameConstants.W_WIDTH,GameConstants.W_HEIGHT));
-		canvasBounds.add(new Vector2(0,GameConstants.W_HEIGHT));
-		addChain(canvasBounds);
-		canvasBounds.clear();
-		
-		canvasBounds.add(new Vector2(0,GameConstants.W_HEIGHT));
-		canvasBounds.add(new Vector2(0,0));
-		addChain(canvasBounds);
-		canvasBounds.clear();		
+		float [] boundaryCoordinates = new float [] {0,0,GameConstants.W_WIDTH,0,GameConstants.W_WIDTH,GameConstants.W_HEIGHT,0,GameConstants.W_HEIGHT,0,0};
+		Chain boundaryObject = new Chain.Constructor(boundaryCoordinates).Construct();
+		boundaryObject.initialize(world);
+		bounds.add(boundaryObject);
 		
 	}
 	
@@ -123,6 +100,7 @@ public class GameManager {
 		joints = new ArrayList<IJoint>();
 		modifiers = new ArrayList<IModifier>();
 		fields = new ArrayList<Field>();
+		bounds = new ArrayList<Chain>();
 	}
 	
 	/*
@@ -151,7 +129,7 @@ public class GameManager {
 	public void updateRunning(float delta) {
 		
 		for (IJoint s : joints)
-			s.update(points);
+			s.update();
 		
 		for (IModifier m : modifiers)
 			m.update();
@@ -187,33 +165,8 @@ public class GameManager {
 		points.add(gameObject);
 	}
 	
-	/**
-	 * Adds a circle GameObject to the world. Can be a static or dynamic body.
-	 * @param pos the center of the circle
-	 * @param radius radius of the circle
-	 * @param pinned whether or not to make static/dynamic
-	 */
-	
 	public void addField(Field field){
 		fields.add(field);
-	}
-
-	
-	/**
-	 * Creates a static GameObject chain. Can collide with other game objects, but is pinned.
-	 * @param vertices
-	 */
-	public void addChain(ArrayList<Vector2> vertices){
-
-		Vector2 vert[] = new Vector2[vertices.size()];
-		
-		for(int i = 0; i < vertices.size(); i++){
-			vert[i] = vertices.get(i);
-		}
-		
-		Chain chainBody = new Chain.Constructor(vert).Construct();
-		chainBody.initialize(world);
-		points.add(chainBody);
 	}
 	
 	public void addVelocityToObject(IGameObject point, float [] endPos){
@@ -244,6 +197,11 @@ public class GameManager {
 		Stick stick = new Stick(p1,p2);
 		stick.initialize(world);
 		joints.add(stick);
+	}
+	
+	public void addJoint(IJoint joint){
+		joint.initialize(world);
+		joints.add(joint);
 	}
 	
 	public void addSpring(IGameObject p1, IGameObject p2){
@@ -304,9 +262,24 @@ public class GameManager {
 	}
 	
 	public void save(){
-		encoder.load(this);
-		encoder.Encode();
+		try { encoder = new XMLSerializer(); } 
+		catch(FileNotFoundException fe) 
+		{ 
+			Gdx.app.log("FileNotFound", fe.getMessage());
+		}
+		encoder.loadGameEntities(this);
+		encoder.serialize();
 		encoder.dispose();
+	}
+	
+	public void load(){
+		try { decoder = new XMLDeserializer(); }
+		catch(FileNotFoundException fe)
+		{
+			Gdx.app.log("FileNotFound", fe.getMessage());
+		}
+		decoder.deserialize(this);
+		decoder.dispose();
 	}
 	
 
@@ -357,6 +330,10 @@ public class GameManager {
 	
 	public ArrayList<Field> getFields(){
 		return fields;
+	}
+	
+	public ArrayList<Chain> getBounds(){
+		return bounds;
 	}
 	
 	public boolean isMenu(){

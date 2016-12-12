@@ -50,6 +50,7 @@ public class ClientInterface {
     	// WebSocketHandler is an implementation of WebSocketListener that uses the current serializer
     	// to create objects from received raw data.
     	final WebSocketHandler handler = new WebSocketHandler();
+    	
     	// registering action handler
     	handler.registerHandler(actionPacket.class, new Handler<actionPacket>(){
     		@Override
@@ -94,6 +95,7 @@ public class ClientInterface {
     			return true;
     		}    		
     	});
+    	
     	return handler;
     }
     

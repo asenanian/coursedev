@@ -1,6 +1,7 @@
 package com.mygdx.Entities.GameObjects;
 
-import com.badlogic.gdx.Gdx;
+import java.io.Serializable;
+
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -10,7 +11,7 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
-import com.mygdx.game.shared.rectanglePacket;
+import com.mygdx.XMLService.RectangleBean;
 import com.mygdx.managers.AssetLoader;
 
 public class Rectangle implements IGameObject{
@@ -77,7 +78,18 @@ public class Rectangle implements IGameObject{
 		friction = constructor.friction;
 		density = constructor.density;
 		textureRegion = pinned ? AssetLoader.rectanglePinned : AssetLoader.rectangle;
-
+	}
+	
+	public Rectangle(RectangleBean rectangleBean){
+		this.x = rectangleBean.getX();
+		this.y = rectangleBean.getY();
+		this.width = rectangleBean.getWidth();
+		this.height = rectangleBean.getHeight();
+		this.pinned = rectangleBean.getPinned();
+		this.restitution = rectangleBean.getRestitution();
+		this.friction = rectangleBean.getFriction();
+		this.density = rectangleBean.getDensity();
+		this.textureRegion = pinned ? AssetLoader.rectanglePinned : AssetLoader.rectangle;
 	}
 	
 	@Override
@@ -130,31 +142,10 @@ public class Rectangle implements IGameObject{
 	}
 	
 	@Override
-	public boolean containsPos(float x, float y){
+	public boolean containsPos(float [] pos){
 
-		return ( (x > (body.getPosition().x - width) && (x < body.getPosition().x + width) ) &&
-				( (y > body.getPosition().y - height) && (y < body.getPosition().y + height) ) );
-	}
-	
-	@Override
-	public boolean isSelecting(float x, float y){
-		if ( containsPos(x,y) ){
-			isPressed = true;
-			return true;
-		}
-		return false;
-	}
-	
-	@Override
-	public boolean isSelected(float x, float y){
-		if( containsPos(x, y) && isPressed ){
-			isPressed = false;
-			isSelected = !isSelected; // toggle button
-			return true;
-		}
-		
-		isPressed = false;
-		return false;
+		return ( (pos[0] > (body.getPosition().x - width) && (pos[0] < body.getPosition().x + width) ) &&
+				( (pos[1] > body.getPosition().y - height) && (pos[1] < body.getPosition().y + height) ) );
 	}
 	
 	@Override
@@ -173,7 +164,16 @@ public class Rectangle implements IGameObject{
 	}
 	
 	@Override
-	public Object getPacket(){
-		return new rectanglePacket(x,y,width,height,pinned);
+	public Serializable getBean(){
+		RectangleBean rectangleBean = new RectangleBean();
+		rectangleBean.setX(body.getPosition().x - width);
+		rectangleBean.setY(body.getPosition().y - height);
+		rectangleBean.setWidth(width);
+		rectangleBean.setHeight(height);
+		rectangleBean.setRestitution(restitution);
+		rectangleBean.setDensity(density);
+		rectangleBean.setFriction(friction);
+		
+		return rectangleBean;
 	}
 }

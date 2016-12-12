@@ -1,10 +1,12 @@
 package com.mygdx.Entities.Modifiers;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.mygdx.Entities.GameObjects.IGameObject;
+import com.mygdx.XMLService.FieldBean;
 import com.mygdx.managers.AssetLoader;
 
 public class Field {
@@ -56,5 +58,17 @@ public class Field {
 	
 	public void draw(SpriteBatch batcher){
 		batcher.draw(AssetLoader.region, x, y, width, height);
+	}
+	
+	public Serializable getBean(){
+		
+		FieldBean fieldBean = new FieldBean();
+		
+		fieldBean.setX(x);
+		fieldBean.setY(y);
+		fieldBean.setWidth(width);
+		fieldBean.setHeight(height);
+		
+		return fieldBean;
 	}
 }

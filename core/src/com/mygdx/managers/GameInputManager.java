@@ -71,6 +71,7 @@ public class GameInputManager implements InputProcessor {
 		mouse.posOnDrag = mousePos; // Gets rid of jumping when starting to pan the camera.
 		y = GameConstants.HEIGHT - y;
 		
+		// Bulk of input processing. See action classes.
 		if ( gameManager.isCreate() && inCanvasBounds(x,y)  ){
 			IAction action = actions.get(selectedToolButton);
 			
@@ -119,6 +120,7 @@ public class GameInputManager implements InputProcessor {
 		float mousePos [] = toWorldCoordinates(x,y);
 		y = GameConstants.HEIGHT - y;
 
+		// Bulk of input processing. See action classes.
 		if ( gameManager.isCreate() && inCanvasBounds(x,y) ){
 			IAction action = actions.get(selectedToolButton);
 			
@@ -168,6 +170,10 @@ public class GameInputManager implements InputProcessor {
 				} else if ( entry.getKey().equals("SAVE") ){
 					gameManager.save();
 					entry.getValue().release();
+				} else if ( entry.getKey().equals("LOAD") ){
+					gameManager.restart();
+					gameManager.load();
+					entry.getValue().release();
 				}
 				return true;
 			}
@@ -206,6 +212,7 @@ public class GameInputManager implements InputProcessor {
 		mouse.posOnDrag = mousePos;
 		y = GameConstants.HEIGHT - y;
 		
+		// Bulk of input processing. See action classes.
 		if ( gameManager.isCreate() && inCanvasBounds(x,y) ){
 			IAction action = actions.get(selectedToolButton);
 			

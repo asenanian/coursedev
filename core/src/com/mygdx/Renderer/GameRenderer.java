@@ -25,6 +25,7 @@ import com.mygdx.Entities.Joints.IJoint;
 import com.mygdx.Entities.Modifiers.Field;
 import com.mygdx.Entities.Modifiers.IModifier;
 import com.mygdx.Entities.GameObjects.PolyBody;
+import com.mygdx.Entities.GameObjects.Chain;
 import com.mygdx.Entities.GameObjects.IGameObject;
 
 import com.mygdx.GameWorld.GameConstants;
@@ -47,7 +48,8 @@ public class GameRenderer {
 	private ArrayList<IModifier> modifiers;
 	private ArrayList<Field> fields;
 	
-	// Buttons
+	// User-Interface
+	private ArrayList<Chain> bounds;
 	private HashMap<String,SimpleButton> toolBar;
 	private HashMap<String,SimpleButton> modifierBar;
 	private HashMap<String,SimpleButton> controlBar;
@@ -110,7 +112,6 @@ public class GameRenderer {
 		worldRenderer = new ShapeRenderer();
 		worldRenderer.setAutoShapeType(true);
 		worldRenderer.setProjectionMatrix(worldCam.combined);
-
 					
 		initGameObjects();
 	}
@@ -120,6 +121,7 @@ public class GameRenderer {
 		joints = manager.getJoints();
 		modifiers = manager.getModifiers();
 		fields = manager.getFields();
+		bounds = manager.getBounds();
 	}
 	
 	public void initButtons(){
@@ -161,6 +163,10 @@ public class GameRenderer {
 
     		for ( Field field : fields ){
     			field.draw(worldBatcher);
+    		}
+    		
+    		for ( Chain boundEdge : bounds){
+    			boundEdge.draw(worldBatcher);
     		}
     		worldBatcher.end();
     		
@@ -266,7 +272,7 @@ public class GameRenderer {
 	public void drawJoints() {
 		worldRenderer.set(ShapeType.Filled);//for filled rectline
 	    for (IJoint j : joints ) {
-    		j.draw(manager.getPoints(),worldRenderer);
+    		j.draw(worldRenderer);
 	    }
 	}
 	

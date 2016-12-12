@@ -1,5 +1,7 @@
 package com.mygdx.Entities.GameObjects;
 
+import java.io.Serializable;
+
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
@@ -10,6 +12,7 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
 import com.mygdx.GameWorld.GameConstants;
+import com.mygdx.XMLService.ChainBean;
 import com.mygdx.managers.AssetLoader;
 
 public class Chain implements IGameObject{
@@ -35,6 +38,14 @@ public class Chain implements IGameObject{
 			this.vertices = vertices;	
 		}
 		
+		public Constructor(float [] p_vertices){
+			this.vertices = new Vector2 [p_vertices.length/2];
+			
+			for(int i = 0; i < p_vertices.length/2;i++){
+				vertices[i] = new Vector2(p_vertices[2*i],p_vertices[2*i+1]);
+			}
+		}
+		
 		public Constructor restitution(float val)
 		{ this.restitution = val;		return this; }
 		
@@ -54,6 +65,19 @@ public class Chain implements IGameObject{
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
+	}
+	
+	public Chain(ChainBean chainBean){
+		float [] verticesInFloatArray = chainBean.getVertices();
+		this.vertices = new Vector2 [verticesInFloatArray.length/2];
+		
+		for(int i = 0; i < verticesInFloatArray.length/2;i++){
+			vertices[i] = new Vector2(verticesInFloatArray[2*i],verticesInFloatArray[2*i+1]);
+		}
+		
+		restitution = chainBean.getRestitution();
+		friction = chainBean.getFriction();
+		density = chainBean.getDensity();
 	}
 	
 	@Override
@@ -114,17 +138,7 @@ public class Chain implements IGameObject{
 	}
 	
 	@Override
-	public boolean containsPos(float x, float y){
-		return false;
-	}
-	
-	@Override
-	public boolean isSelecting(float x, float y){
-		return false;
-	}
-	
-	@Override
-	public boolean isSelected(float x, float y){
+	public boolean containsPos(float [] pos){
 		return false;
 	}
 	
@@ -144,8 +158,14 @@ public class Chain implements IGameObject{
 	}
 
 	@Override
-	public Object getPacket() {
-		// TODO Auto-generated method stub
-		return null;
+	public Serializable getBean() {
+		float [] vertexArray = new float [vertices.length*2];
+		for(int i = 0; i < vertices.length; i++){
+			vertexArray[2*i] = vertices[i].x;
+			vertexArray[2*i+1] = vertices[i].y;	
+		}
+		ChainBean chainbean = new ChainBean();
+		chainbean.setVertices(vertexArray);
+		return chainbean;
 	}
 }

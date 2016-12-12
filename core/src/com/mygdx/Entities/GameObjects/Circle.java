@@ -1,5 +1,8 @@
 package com.mygdx.Entities.GameObjects;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
@@ -9,7 +12,8 @@ import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
-import com.mygdx.game.shared.circlePacket;
+import com.mygdx.Entities.Modifiers.IModifier;
+import com.mygdx.XMLService.CircleBean;
 import com.mygdx.managers.AssetLoader;
 
 public class Circle implements IGameObject{
@@ -22,10 +26,7 @@ public class Circle implements IGameObject{
 	private final TextureRegion textureRegion;
 	
 	private Body body;
-	private Fixture fixture;
-	
-	private boolean isPressed = false;
-	private boolean isSelected = false;
+	//private Fixture fixture;
 	
 	public static class Constructor {
 		// required params
@@ -68,6 +69,16 @@ public class Circle implements IGameObject{
 		textureRegion = pinned ? AssetLoader.circlePinned : AssetLoader.circle;
 	}
 	
+	public Circle(CircleBean circleBean){
+		this.pos = circleBean.getPos();
+		this.radius = circleBean.getRadius();
+		this.pinned = circleBean.getPinned();
+		this.restitution = circleBean.getRestitution();
+		this.friction = circleBean.getFriction();
+		this.density = circleBean.getDensity();
+		this.textureRegion = pinned ? AssetLoader.circlePinned : AssetLoader.circle;
+	}
+	
 	@Override
 	public void initialize(World world){
 		BodyDef bodyDef = new BodyDef();
@@ -84,9 +95,8 @@ public class Circle implements IGameObject{
 		fixtureDef.friction = friction;
 		fixtureDef.restitution = restitution;
 		
-		fixture = body.createFixture(fixtureDef);
+		body.createFixture(fixtureDef);
 		circle.dispose();
-
 	}
 	
 	@Override
@@ -115,34 +125,13 @@ public class Circle implements IGameObject{
 	}
 	
 	@Override
-	public boolean containsPos(float x, float y){
+	public boolean containsPos(float [] pos){
 
 		float r = (this.radius == 0 ? this.radius : this.radius);
-		if (x > body.getPosition().x-r && x < body.getPosition().x+r &&
-				y > body.getPosition().y-r && y < body.getPosition().y+r) {
+		if (pos[0] > body.getPosition().x-r && pos[0] < body.getPosition().x+r &&
+				pos[1] > body.getPosition().y-r && pos[1] < body.getPosition().y+r) {
 			return true;
 		}
-		return false;
-	}
-	
-	@Override
-	public boolean isSelecting(float x, float y){
-		if ( containsPos(x,y) ){
-			isPressed = true;
-			return true;
-		}
-		return false;
-	}
-	
-	@Override
-	public boolean isSelected(float x, float y){
-		if( containsPos(x, y) && isPressed ){
-			isPressed = false;
-			isSelected = !isSelected; 
-			return true;
-		}
-		
-		isPressed = false;
 		return false;
 	}
 	
@@ -162,7 +151,17 @@ public class Circle implements IGameObject{
 	}
 
 	@Override
-	public Object getPacket() {
-		return new circlePacket(pos,radius,pinned);
+	public Serializable getBean() {
+		
+		CircleBean circleBean = new CircleBean();
+		
+		circleBean.setPinned(pinned);
+		circleBean.setRadius(radius);
+		circleBean.setPos(new float []{body.getPosition().x,body.getPosition().y});
+		circleBean.setRestitution(restitution);
+		circleBean.setFriction(friction);
+		circleBean.setDensity(density);
+		
+		return circleBean;
 	}
 }

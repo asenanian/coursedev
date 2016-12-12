@@ -21,7 +21,7 @@ public class ActionUtility {
 	
 	protected IGameObject getObject(float [] mousePos){
 		for(IGameObject object : manager.getPoints()){
-			if (object.containsPos(mousePos[0], mousePos[1]))
+			if (object.containsPos(mousePos))
 				return object;
 		}
 		return null;

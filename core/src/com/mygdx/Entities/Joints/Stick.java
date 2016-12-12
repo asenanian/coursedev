@@ -1,6 +1,6 @@
 package com.mygdx.Entities.Joints;
 
-import java.util.ArrayList;
+import java.io.Serializable;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
@@ -12,6 +12,7 @@ import com.badlogic.gdx.physics.box2d.joints.DistanceJointDef;
 import com.mygdx.Entities.GameObjects.IGameObject;
 import com.mygdx.GameWorld.GameConstants;
 import com.mygdx.GameWorld.GameManager;
+import com.mygdx.XMLService.StickBean;
 
 public class Stick implements IJoint{
 
@@ -28,6 +29,24 @@ public class Stick implements IJoint{
 		this.point2 = point2;
 	}
 	
+	// bean constructor
+	public Stick(StickBean stickBean, GameManager manager){
+		this.length = stickBean.getLength();
+		
+		for(IGameObject gameObject : manager.getPoints()){
+			if (gameObject.containsPos(stickBean.getPositionOfFirstObject())){
+				this.point1 = gameObject;
+				break;
+			}
+		}
+		for(IGameObject gameObject : manager.getPoints()){
+			if (gameObject.containsPos(stickBean.getPositionOfSecondObject())){
+				this.point2 = gameObject;
+				break;
+			}
+		}
+	}
+	
 	public void initialize(World world){
 		Body body1 = point1.getBody();
 		Body body2 = point2.getBody();
@@ -40,7 +59,7 @@ public class Stick implements IJoint{
 	}
 
 	@Override
-	public void draw(ArrayList<IGameObject> points, ShapeRenderer shapeRenderer) {
+	public void draw(ShapeRenderer shapeRenderer) {
 		Vector2 pos1 = point1.getBody().getPosition();
 		Vector2 pos2 = point2.getBody().getPosition();
 		
@@ -49,8 +68,19 @@ public class Stick implements IJoint{
 	}
 
 	@Override
-	public void update(ArrayList<IGameObject> points) {
+	public void update() {
 		//
+	}
+
+	@Override
+	public Serializable getBean() {
+		StickBean stickBean = new StickBean();
+		stickBean.setLength(length);
+		stickBean.setPositionOfFirstObject(new float [] {point1.getBody().getPosition().x,
+				point1.getBody().getPosition().y});
+		stickBean.setPositionOfSecondObject(new float [] {point2.getBody().getPosition().x,
+					point2.getBody().getPosition().y});
+		return stickBean;
 	}
 
 }

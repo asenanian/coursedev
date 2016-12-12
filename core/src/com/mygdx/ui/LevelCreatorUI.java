@@ -98,6 +98,12 @@ public class LevelCreatorUI {
 				GameConstants.WIDTH - 3*GameConstants.LC_WIDTH - 3*GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
 				AssetLoader.restartButtonUp,AssetLoader.restartButtonDown));
+		
+		//save button
+		controlBar.put("LOAD", new SimpleButton(
+				GameConstants.WIDTH - 4*GameConstants.LC_WIDTH - 4*GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
+				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
+				AssetLoader.restartButtonUp,AssetLoader.restartButtonDown));
 	}
 
 }

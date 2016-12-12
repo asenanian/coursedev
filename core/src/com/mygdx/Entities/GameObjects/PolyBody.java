@@ -1,5 +1,7 @@
 package com.mygdx.Entities.GameObjects;
 
+import java.io.Serializable;
+
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
@@ -9,6 +11,7 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.mygdx.XMLService.PolygonBean;
 
 public class PolyBody implements IGameObject{
 	private final Vector2 [] vertices;
@@ -37,6 +40,15 @@ public class PolyBody implements IGameObject{
 			this.pinned = pinned;
 		}
 		
+		public Constructor(float [] p_vertices, boolean pinned){
+			this.vertices = new Vector2 [p_vertices.length/2];
+			
+			for(int i = 0; i < p_vertices.length/2;i++){
+				vertices[i] = new Vector2(p_vertices[2*i],p_vertices[2*i+1]);
+			}
+			this.pinned = pinned;
+		}
+		
 		public Constructor restitution(float val)
 		{ this.restitution = val;		return this; }
 		
@@ -59,13 +71,23 @@ public class PolyBody implements IGameObject{
 		density = constructor.density;
 	}
 	
+	public PolyBody(PolygonBean polygonBean){
+		float [] verticesInFloatArray = polygonBean.getVertices();
+		this.vertices = new Vector2 [verticesInFloatArray.length/2];
+		
+		for(int i = 0; i < verticesInFloatArray.length/2;i++){
+			vertices[i] = new Vector2(verticesInFloatArray[2*i],verticesInFloatArray[2*i+1]);
+		}
+		pinned = polygonBean.getPinned();
+		restitution = polygonBean.getRestitution();
+		friction = polygonBean.getFriction();
+		density = polygonBean.getDensity();
+	}
+	
 	@Override
 	public void initialize(World world){
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = pinned ? BodyDef.BodyType.StaticBody : BodyDef.BodyType.DynamicBody;
-
-		//bodyDef.position.set(.5f*(vertices[0].x + vertices[vertices.length - 1].x),
-		//		.5f*(vertices[vertices.length - 1].y + vertices[0].y));
 		
 		bodyDef.position.set(0,0);
 		
@@ -87,7 +109,7 @@ public class PolyBody implements IGameObject{
 		
 		for(int i = 0; i < vertices.length; i++){
 			vertexBounds[2*i] = vertices[i].x;
-			vertexBounds[2*i+1] = vertices[i].y;			
+			vertexBounds[2*i+1] = vertices[i].y;	
 		}
 		
 		bounds = new Polygon(vertexBounds);
@@ -107,18 +129,8 @@ public class PolyBody implements IGameObject{
 	}
 	
 	@Override	
-	public boolean containsPos(float x, float y){
-		return bounds.contains(x, y);
-	}
-	
-	@Override
-	public boolean isSelecting(float x, float y){
-		return false;
-	}
-	
-	@Override
-	public boolean isSelected(float x, float y){
-		return false;
+	public boolean containsPos(float [] pos){
+		return bounds.contains(pos[0],pos[1]);
 	}
 	
 	@Override
@@ -141,8 +153,15 @@ public class PolyBody implements IGameObject{
 	}
 
 	@Override
-	public Object getPacket() {
-		// TODO Auto-generated method stub
-		return null;
+	public Serializable getBean() {
+		PolygonBean polygonPacket = new PolygonBean();
+		
+		polygonPacket.setPinned(pinned);
+		polygonPacket.setDensity(density);
+		polygonPacket.setFriction(friction);
+		polygonPacket.setRestitution(restitution);
+		polygonPacket.setVertices(bounds.getTransformedVertices());
+
+		return polygonPacket;
 	}
 }
