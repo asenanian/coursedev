@@ -5,23 +5,19 @@ import java.io.Serializable;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
-import com.mygdx.XMLService.PolygonBean;
+import com.mygdx.XMLService.Beans.PolygonBean;
 
-public class PolyBody implements IGameObject{
+public class PolyBody extends GameObjectUtility implements IGameObject{
 	private final Vector2 [] vertices;
 	private final float restitution;
 	private final float friction;
 	private final float density;
 	private final boolean pinned;
 	
-	private Body body;
-	private Fixture fixture;
 	private Polygon bounds;
 	
 	public static class Constructor {
@@ -64,6 +60,7 @@ public class PolyBody implements IGameObject{
 	}
 	
 	public PolyBody(Constructor constructor){
+		super();
 		vertices = constructor.vertices;
 		pinned = constructor.pinned;
 		restitution = constructor.restitution;
@@ -72,6 +69,7 @@ public class PolyBody implements IGameObject{
 	}
 	
 	public PolyBody(PolygonBean polygonBean){
+		super();
 		float [] verticesInFloatArray = polygonBean.getVertices();
 		this.vertices = new Vector2 [verticesInFloatArray.length/2];
 		
@@ -102,7 +100,7 @@ public class PolyBody implements IGameObject{
 		fixtureDef.friction = friction;
 		fixtureDef.restitution = restitution;
 		
-		fixture = body.createFixture(fixtureDef);
+		body.createFixture(fixtureDef);
 		polyShape.dispose();
 		
 		float vertexBounds [] = new float[vertices.length*2];
@@ -131,11 +129,6 @@ public class PolyBody implements IGameObject{
 	@Override	
 	public boolean containsPos(float [] pos){
 		return bounds.contains(pos[0],pos[1]);
-	}
-	
-	@Override
-	public Body getBody(){
-		return body;
 	}
 	
 	@Override

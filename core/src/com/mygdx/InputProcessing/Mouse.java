@@ -1,4 +1,4 @@
-package com.mygdx.managers;
+package com.mygdx.InputProcessing;
 
 // TODO: get rid of this class
 public class Mouse {

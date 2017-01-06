@@ -1,4 +1,4 @@
-package com.mygdx.XMLService;
+package com.mygdx.XMLService.Beans;
 
 import java.io.Serializable;
 

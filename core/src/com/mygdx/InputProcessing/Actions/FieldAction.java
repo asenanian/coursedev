@@ -1,25 +1,23 @@
-package com.mygdx.Actions;
+package com.mygdx.InputProcessing.Actions;
 
-import com.mygdx.Entities.GameObjects.Rectangle;
+import com.mygdx.Entities.GameObjects.Field;
 import com.mygdx.GameWorld.GameManager;
 import com.mygdx.Renderer.GameRenderer;
-import com.mygdx.ui.SimpleButton;
 
-public class RectangleAction extends ActionUtility implements IAction  {
+public class FieldAction extends ActionUtility implements IAction  {
 	
 	private float mouseDown [];
-	private SimpleButton pinnedButton;
 	private boolean creatingObject;
 	
-	public RectangleAction(GameManager manager, GameRenderer renderer, SimpleButton simpleButton){
+	public FieldAction(GameManager manager, GameRenderer renderer){
 		super(manager,renderer);
 		mouseDown = null;
-		pinnedButton = simpleButton;
 		creatingObject = false;
 	}
 
 	@Override
 	public boolean actOnTouchDown(float [] mousePos) {
+		
 		if (getObject(mousePos) == null){ // Didn't click on a GameObject
 			renderer.buildRect(mousePos);
 			mouseDown = mousePos;
@@ -30,6 +28,7 @@ public class RectangleAction extends ActionUtility implements IAction  {
 	
 	@Override
 	public boolean actOnTouchUp(float [] mousePos) {
+		
 		if (getObject(mousePos) == null && creatingObject){ // Didn't release on a GameObject
 			
 			// processing mouse clicks for params of new rectangle object
@@ -38,12 +37,14 @@ public class RectangleAction extends ActionUtility implements IAction  {
 			float width = mouseDown[0] > mousePos[0] ? mouseDown[0] - x : mousePos[0] - x;
 			float height = mouseDown[1] > mousePos[1] ? mouseDown[1] - y : mousePos[1] - y;
 			
-			Rectangle rectBody = new Rectangle.Constructor(x, y, width, height, pinnedButton.getClicked()).Construct();
-			manager.addGameObject(rectBody);
+			Field field = new Field(x, y, width, height);
+			manager.addField(field);
+
 		}
 		creatingObject = false;
 		renderer.endBuilder();
-		return true;
+
+		return true; 				// stop checking for other actions
 	}
 
 	@Override

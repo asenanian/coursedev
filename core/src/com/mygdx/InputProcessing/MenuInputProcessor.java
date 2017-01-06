@@ -1,4 +1,4 @@
-package com.mygdx.managers;
+package com.mygdx.InputProcessing;
 
 import java.util.HashMap;
 

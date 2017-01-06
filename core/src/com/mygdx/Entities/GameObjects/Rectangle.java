@@ -4,17 +4,14 @@ import java.io.Serializable;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
-import com.mygdx.XMLService.RectangleBean;
-import com.mygdx.managers.AssetLoader;
+import com.mygdx.InputProcessing.AssetLoader;
+import com.mygdx.XMLService.Beans.RectangleBean;
 
-public class Rectangle implements IGameObject{
+public class Rectangle extends GameObjectUtility implements IGameObject{
 	private final float x;
 	private final float y;
 	private final float height;
@@ -23,13 +20,9 @@ public class Rectangle implements IGameObject{
 	private final float restitution;
 	private final float friction;
 	private final float density;
-	private final TextureRegion textureRegion;
 	
-	private Body body;
-	private Fixture fixture;
-	
-	private boolean isSelected = false;
-	private boolean isPressed = false;
+	private Sprite objectSprite;
+	private Sprite shadowSprite;
 	
 	public static class Constructor {
 		// required params
@@ -69,6 +62,7 @@ public class Rectangle implements IGameObject{
 	}
 	
 	public Rectangle(Constructor constructor){
+		super();
 		x = constructor.x;
 		y = constructor.y;
 		width = constructor.width > 0.05 ? constructor.width / 2 : 0.025f;
@@ -77,10 +71,12 @@ public class Rectangle implements IGameObject{
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
-		textureRegion = pinned ? AssetLoader.rectanglePinned : AssetLoader.rectangle;
+		objectSprite = new Sprite(pinned ? AssetLoader.rectanglePinned : AssetLoader.rectangle);
+		shadowSprite = new Sprite(AssetLoader.rectangleShadow);
 	}
 	
 	public Rectangle(RectangleBean rectangleBean){
+		super();
 		this.x = rectangleBean.getX();
 		this.y = rectangleBean.getY();
 		this.width = rectangleBean.getWidth();
@@ -89,7 +85,9 @@ public class Rectangle implements IGameObject{
 		this.restitution = rectangleBean.getRestitution();
 		this.friction = rectangleBean.getFriction();
 		this.density = rectangleBean.getDensity();
-		this.textureRegion = pinned ? AssetLoader.rectanglePinned : AssetLoader.rectangle;
+		objectSprite = new Sprite(pinned ? AssetLoader.rectanglePinned : AssetLoader.rectangle);
+		shadowSprite = new Sprite(AssetLoader.rectangleShadow);
+
 	}
 	
 	@Override
@@ -108,37 +106,33 @@ public class Rectangle implements IGameObject{
 		fixtureDef.friction = friction;
 		fixtureDef.restitution = restitution;
 		
-		fixture = body.createFixture(fixtureDef);
+		body.createFixture(fixtureDef);
 		polygonShape.dispose();
-	}
-	
-	@Override
-	public void draw( SpriteBatch batcher){
 		
-		batcher.draw(textureRegion, 
-				(body.getPosition().x - width), 
-				(body.getPosition().y - height), 
-				width, 
-				height, 
-				width*2,
-				height*2,
-				1f,1f,(float)(Math.toDegrees(body.getAngle())));
+		objectSprite.setOrigin(width, height);
+		objectSprite.setSize(2*width, 2*height);
+		
+		shadowSprite.setOrigin((width/(128))*(108 + 60), 
+		 		 (height/(128))*(108 + 60));		
+		shadowSprite.setSize(  (width*2/(256))*(216 + 120),
+				 (height*2/(256))*(216 + 120));
 
 	}
 	
 	@Override
+	public void draw( SpriteBatch batcher){		
+		objectSprite.setPosition(body.getPosition().x - width, body.getPosition().y - height);
+		objectSprite.setRotation((float)(Math.toDegrees(body.getAngle())));
+		objectSprite.draw(batcher);
+	}
+	
+	@Override
 	public void drawShadows(SpriteBatch batcher){
-		
-		Sprite sprite = new Sprite(AssetLoader.rectangleShadow);
-		sprite.setPosition(body.getPosition().x - (width/(128))*(128 + 60 ), 
+		shadowSprite.setPosition(body.getPosition().x - (width/(128))*(128 + 60 ), 
 				body.getPosition().y - (height/(128))*(128 + 60));
-		sprite.setSize(  (width*2/(256))*(216 + 120),
-						 (height*2/(256))*(216 + 120));
-		sprite.setOrigin((width/(128))*(108 + 60), 
-				 		 (height/(128))*(108 + 60));
-		//sprite.setScale(xscale,yscale);
-		sprite.setRotation((float)(Math.toDegrees(body.getAngle())));
-		sprite.draw(batcher);		
+
+		shadowSprite.setRotation((float)(Math.toDegrees(body.getAngle())));
+		shadowSprite.draw(batcher);		
 	}
 	
 	@Override
@@ -146,11 +140,6 @@ public class Rectangle implements IGameObject{
 
 		return ( (pos[0] > (body.getPosition().x - width) && (pos[0] < body.getPosition().x + width) ) &&
 				( (pos[1] > body.getPosition().y - height) && (pos[1] < body.getPosition().y + height) ) );
-	}
-	
-	@Override
-	public Body getBody(){
-		return body;
 	}
 	
 	@Override

@@ -2,7 +2,7 @@ package com.mygdx.CourseDev;
 
 import com.badlogic.gdx.Game;
 import com.mygdx.GameWorld.GameScreen;
-import com.mygdx.managers.AssetLoader;
+import com.mygdx.InputProcessing.AssetLoader;
 
 public class CourseDev extends Game {
 	

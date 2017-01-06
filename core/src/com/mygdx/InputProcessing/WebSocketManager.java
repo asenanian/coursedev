@@ -1,4 +1,4 @@
-package com.mygdx.managers;
+package com.mygdx.InputProcessing;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -10,12 +10,13 @@ import com.github.czyzby.websocket.WebSockets;
 import com.github.czyzby.websocket.WebSocketHandler.Handler;
 import com.github.czyzby.websocket.serialization.impl.ManualSerializer;
 import com.mygdx.Entities.GameObjects.*;
+import com.mygdx.XMLService.Beans.CircleBean;
+import com.mygdx.game.shared.ActionPacket;
+import com.mygdx.game.shared.CirclePacket;
 import com.mygdx.game.shared.MyPackets;
-import com.mygdx.game.shared.actionPacket;
-import com.mygdx.game.shared.circlePacket;
 import com.mygdx.game.shared.StringPacket;
 
-public class ClientInterface {
+public class WebSocketManager {
 	
 	private WebSocket socket;
 	private String userName;
@@ -23,7 +24,7 @@ public class ClientInterface {
 	private boolean readyToCreate = true;
 	private Queue<Circle> circles = new LinkedList<Circle>();
 	
-	public ClientInterface(){}
+	public WebSocketManager(){}
 
 	public void connectSocket(){
 		
@@ -52,9 +53,9 @@ public class ClientInterface {
     	final WebSocketHandler handler = new WebSocketHandler();
     	
     	// registering action handler
-    	handler.registerHandler(actionPacket.class, new Handler<actionPacket>(){
+    	handler.registerHandler(ActionPacket.class, new Handler<ActionPacket>(){
     		@Override
-    		public boolean handle(final WebSocket socket, final actionPacket packet){
+    		public boolean handle(final WebSocket socket, final ActionPacket packet){
     	        if(packet.getAction() == "add"){
     	        	id = Integer.parseInt(packet.getValue());
     	        	sendMessage("Id registered as: " + id);
@@ -79,9 +80,9 @@ public class ClientInterface {
     		
     	});
     	// registering circle handler
-    	handler.registerHandler(circlePacket.class, new Handler<circlePacket>(){
+    	handler.registerHandler(CirclePacket.class, new Handler<CirclePacket>(){
     		@Override
-    		public boolean handle(final WebSocket socket, final circlePacket packet){
+    		public boolean handle(final WebSocket socket, final CirclePacket packet){
     			sendMessage("Recieved packet " + packet.toString());
     			Circle circle = new Circle.Constructor(packet.getPos(),packet.getRadius(),packet.getPinned()).Construct();
     			try{
@@ -128,12 +129,17 @@ public class ClientInterface {
     }
     
     public void sendAction(String action, String value){
-    	final actionPacket packet = new actionPacket(action, value);
+    	final ActionPacket packet = new ActionPacket(action, value);
     	socket.send(packet);
     }
     
     public void sendCircle(float position[], float radius, boolean pinned){
-    	final circlePacket packet = new circlePacket(position,radius,pinned);
+    	final CirclePacket packet = new CirclePacket(position,radius,pinned);
+    	socket.send(packet);
+    }
+    
+    public void sendCircle(CircleBean circleBean){
+    	final CirclePacket packet = new CirclePacket(circleBean.getPos(),circleBean.getRadius(),circleBean.getPinned());
     	socket.send(packet);
     }
     

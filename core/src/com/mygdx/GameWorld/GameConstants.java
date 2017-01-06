@@ -12,8 +12,8 @@ public final class GameConstants {
 		WIDTH = Gdx.graphics.getWidth();
 		HEIGHT = Gdx.graphics.getHeight();
 		ASPECT_RATIO = HEIGHT/WIDTH;
-		FLOOR = 90;
-		CEILING = HEIGHT - 10;
+		FLOOR = LC_HEIGHT + 2*LC_PADDING;
+		CEILING = HEIGHT - LC_HEIGHT - 2*LC_PADDING;
 		LEFTWALL = 10;
 		RIGHTWALL = WIDTH - 10;
 	}
@@ -29,7 +29,7 @@ public final class GameConstants {
 	public static final float GRAVITY = 10f;
 	public static final float SPRING_CONSTANT = 10f;
 	public static final float SPRING_WIDTH = .05f;
-	public static final float MODIFIER_WIDTH = .1f;
+	public static final float MODIFIER_WIDTH = .05f;
 	public static final float MODIFIER_SCL = 3f; 
 	
 	

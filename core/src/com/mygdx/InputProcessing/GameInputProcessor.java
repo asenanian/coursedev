@@ -1,30 +1,28 @@
-package com.mygdx.managers;
+package com.mygdx.InputProcessing;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-
-import com.mygdx.Actions.CircleAction;
-import com.mygdx.Actions.CurveAction;
-import com.mygdx.Actions.FieldAction;
-import com.mygdx.Actions.ForceAction;
-import com.mygdx.Actions.IAction;
-import com.mygdx.Actions.MoveAction;
-import com.mygdx.Actions.PathAction;
-import com.mygdx.Actions.RectangleAction;
-import com.mygdx.Actions.SpringAction;
-import com.mygdx.Actions.StickAction;
-import com.mygdx.Actions.VelocityAction;
 import com.mygdx.GameWorld.GameConstants;
 import com.mygdx.GameWorld.GameManager;
+import com.mygdx.InputProcessing.Actions.CircleAction;
+import com.mygdx.InputProcessing.Actions.CurveAction;
+import com.mygdx.InputProcessing.Actions.FieldAction;
+import com.mygdx.InputProcessing.Actions.ForceAction;
+import com.mygdx.InputProcessing.Actions.IAction;
+import com.mygdx.InputProcessing.Actions.MoveAction;
+import com.mygdx.InputProcessing.Actions.PathAction;
+import com.mygdx.InputProcessing.Actions.RectangleAction;
+import com.mygdx.InputProcessing.Actions.SpringAction;
+import com.mygdx.InputProcessing.Actions.StickAction;
+import com.mygdx.InputProcessing.Actions.VelocityAction;
 import com.mygdx.Renderer.GameRenderer;
 import com.mygdx.ui.SimpleButton;
 import com.mygdx.ui.LevelCreatorUI;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.math.Vector3;
 
-public class GameInputManager implements InputProcessor {
+public class GameInputProcessor implements InputProcessor {
 	
 	private GameManager gameManager;
 	private GameRenderer renderer;
@@ -38,7 +36,7 @@ public class GameInputManager implements InputProcessor {
 	private HashMap<String,SimpleButton> toolBar = new HashMap<String, SimpleButton>();
 	private HashMap<String,IAction> actions = new HashMap<String, IAction>();
 	
-	public GameInputManager(GameManager gameManager, GameRenderer renderer){
+	public GameInputProcessor(GameManager gameManager, GameRenderer renderer){
 		this.gameManager = gameManager;
 		this.renderer = renderer;
 		this.mouse = new Mouse();
@@ -138,11 +136,13 @@ public class GameInputManager implements InputProcessor {
 				if(entry.getValue().isTouchUp(x, y)){
 					if ( entry.getValue().getClicked() ) 
 						selectedToolButton = entry.getKey(); 
+					else selectedToolButton = "";
+					
 					deselectOtherButtons(entry.getKey());
 					return true;
 				}
 			}
-			selectedToolButton = "";
+			
 			for(Entry<String,SimpleButton> entry : modifierBar.entrySet()){
 				if(entry.getValue().isTouchUp(x, y)){
 					return true;
@@ -159,13 +159,11 @@ public class GameInputManager implements InputProcessor {
 		// check if PLAY/PAUSE or RESTART was hit
 		for(Entry<String,SimpleButton> entry : controlBar.entrySet()){
 			if( entry.getValue().isTouchUp(x, y) ){
-				Gdx.app.log("Control Bar", entry.getKey() + " touched.");
 				if (entry.getKey().equals("RUN")){
 					gameManager.toggleCreative();
-					//entry.getValue().release();
 				} else if ( entry.getKey().equals("RESTART")){
-					Gdx.app.log("Stick button pressed", "yes.");
-					controlBar.get("RUN").release();
+					entry.getValue().release();
+					controlBar.get("RESTART").release();
 					gameManager.restart();
 				} else if ( entry.getKey().equals("SAVE") ){
 					gameManager.save();

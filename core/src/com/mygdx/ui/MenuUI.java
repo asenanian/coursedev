@@ -3,7 +3,7 @@ package com.mygdx.ui;
 import java.util.HashMap;
 
 import com.mygdx.GameWorld.GameConstants;
-import com.mygdx.managers.AssetLoader;
+import com.mygdx.InputProcessing.AssetLoader;
 
 public class MenuUI {
 	

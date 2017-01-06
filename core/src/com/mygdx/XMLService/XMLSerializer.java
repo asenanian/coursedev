@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 import com.mygdx.Entities.GameObjects.IGameObject;
 import com.mygdx.Entities.Joints.IJoint;
-import com.mygdx.Entities.Modifiers.Field;
+import com.mygdx.Entities.GameObjects.Field;
 import com.mygdx.Entities.Modifiers.IModifier;
 import com.mygdx.GameWorld.GameManager;
 
@@ -33,6 +33,16 @@ public class XMLSerializer {
 		}
 		for (IJoint joint : joints){
 			Serializable bean = joint.getBean();
+			xmlEncoder.writeObject(bean);
+		}
+		
+		for (Field field : fields){
+			Serializable bean = field.getBean();
+			xmlEncoder.writeObject(bean);
+		}
+		
+		for (IModifier modifier : modifiers){
+			Serializable bean = modifier.getBean();
 			xmlEncoder.writeObject(bean);
 		}
 	}

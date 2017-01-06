@@ -1,7 +1,9 @@
-package com.mygdx.Actions;
+package com.mygdx.InputProcessing.Actions;
 
 import com.badlogic.gdx.math.Vector2;
 import com.mygdx.Entities.GameObjects.IGameObject;
+import com.mygdx.Entities.Joints.Spring;
+import com.mygdx.GameWorld.GameConstants;
 import com.mygdx.GameWorld.GameManager;
 import com.mygdx.Renderer.GameRenderer;
 
@@ -17,7 +19,7 @@ public class SpringAction extends ActionUtility implements IAction {
 	public boolean actOnTouchDown(float [] mousePos) {
 		// save object clicked down on.
 		if ( (objectOnDown = getObject(mousePos)) != null){ 
-			Vector2 pointPos = objectOnDown.getBody().getPosition();
+			Vector2 pointPos = objectOnDown.getPosition();
 			renderer.buildJoint(new float [] {pointPos.x, pointPos.y} );
 		}
 		return true;
@@ -28,7 +30,7 @@ public class SpringAction extends ActionUtility implements IAction {
 		// __1: not from p1 to p1. __2: p1 is a point. __3: p2 is a point.
 		IGameObject objectOnUp = getObject(mousePos);
 		if (objectOnDown != null && objectOnUp != null && objectOnDown != objectOnUp ){
-			manager.addSpring(objectOnDown, objectOnUp);
+			manager.addJoint(new Spring(objectOnDown,objectOnUp,GameConstants.SPRING_CONSTANT));
 		}
 		renderer.endBuilder();
 		return true;
@@ -45,7 +47,7 @@ public class SpringAction extends ActionUtility implements IAction {
 		if (objectOnDown != null && objectOnDrag != null && objectOnDown != objectOnDrag ){
 			manager.addSpring(objectOnDrag, objectOnDown);
 			
-			Vector2 pointPos = objectOnDrag.getBody().getPosition();
+			Vector2 pointPos = objectOnDrag.getPosition();
 			renderer.endBuilder();
 			renderer.buildJoint(new float [] {pointPos.x, pointPos.y} );
 			objectOnDown = objectOnDrag;

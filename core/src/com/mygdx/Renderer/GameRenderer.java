@@ -22,7 +22,7 @@ import com.badlogic.gdx.InputMultiplexer;
 
 
 import com.mygdx.Entities.Joints.IJoint;
-import com.mygdx.Entities.Modifiers.Field;
+import com.mygdx.Entities.GameObjects.Field;
 import com.mygdx.Entities.Modifiers.IModifier;
 import com.mygdx.Entities.GameObjects.PolyBody;
 import com.mygdx.Entities.GameObjects.Chain;
@@ -30,11 +30,9 @@ import com.mygdx.Entities.GameObjects.IGameObject;
 
 import com.mygdx.GameWorld.GameConstants;
 import com.mygdx.GameWorld.GameManager;
-
-import com.mygdx.managers.AssetLoader;
-import com.mygdx.managers.GameInputManager;
-import com.mygdx.managers.MenuInputProcessor;
-
+import com.mygdx.InputProcessing.AssetLoader;
+import com.mygdx.InputProcessing.GameInputProcessor;
+import com.mygdx.InputProcessing.MenuInputProcessor;
 import com.mygdx.ui.SimpleButton;
 
 public class GameRenderer {
@@ -61,7 +59,6 @@ public class GameRenderer {
 	
 	// batchers/ renderers
 	private ShapeRenderer worldRenderer;
-	private ShapeRenderer screenRenderer;
 	private SpriteBatch worldBatcher;
 	private SpriteBatch screenBatcher;
 	private Box2DDebugRenderer debugRenderer = new Box2DDebugRenderer();
@@ -93,10 +90,6 @@ public class GameRenderer {
 		
 		screenBatcher = new SpriteBatch();
 		screenBatcher.setProjectionMatrix(uiCam.combined);
-
-		screenRenderer = new ShapeRenderer();
-		screenRenderer.setAutoShapeType(true);
-		screenRenderer.setProjectionMatrix(uiCam.combined);
 		
 		// camera with world coordinates
 		worldCam = new OrthographicCamera( 30f, 30f * (h / w));
@@ -126,9 +119,9 @@ public class GameRenderer {
 	
 	public void initButtons(){
 		// buttons
-		this.toolBar = ((GameInputManager)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getToolbar();
-		this.modifierBar = ((GameInputManager)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getModifierBar();
-		this.controlBar = ((GameInputManager)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getControlBar();
+		this.toolBar = ((GameInputProcessor)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getToolbar();
+		this.modifierBar = ((GameInputProcessor)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getModifierBar();
+		this.controlBar = ((GameInputProcessor)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(1)).getControlBar();
 		this.menuButtons = ((MenuInputProcessor)((InputMultiplexer) Gdx.input.getInputProcessor()).getProcessors().get(0)).getMenuButtons();
 	}
 	
@@ -148,7 +141,8 @@ public class GameRenderer {
         screenBatcher.disableBlending();
         drawBackground();
         screenBatcher.enableBlending();
-		screenBatcher.end();
+        screenBatcher.end();
+
         
         if(manager.isCreate() || manager.isRunning()){
         	
@@ -157,40 +151,42 @@ public class GameRenderer {
     		for( IGameObject body : points){
     			body.drawShadows(worldBatcher);
     		}
+    		for ( IJoint joint : joints){
+    			joint.draw(worldBatcher);
+    		}
     		for( IGameObject body : points ){ 
     			body.draw(worldBatcher);
     		}
-
     		for ( Field field : fields ){
     			field.draw(worldBatcher);
     		}
-    		
+    		for ( IModifier m : modifiers) {
+    			m.draw(worldBatcher);
+    		}
+    		for ( Chain boundEdge : bounds){
+    			boundEdge.drawShadows(worldBatcher);
+    		}
     		for ( Chain boundEdge : bounds){
     			boundEdge.draw(worldBatcher);
     		}
     		worldBatcher.end();
     		
         	worldRenderer.begin();
-        	drawCanvasShapes();        	
+        	drawCanvasShapes();
         	worldRenderer.end();
-        	
-        	//draw in screen coordinates
-        	screenRenderer.begin();
-        	drawToolbar();
-        	screenRenderer.end();
         	
         } 
         Gdx.gl.glDisable(GL20.GL_BLEND);
         
-        //draw sprites
         screenBatcher.begin();
         if(manager.isCreate() || manager.isRunning()){
+        	drawToolbar();
         	drawUISprites();
 		}
         else if(manager.isMenu()){
         	drawMenuSprites();
         }
-        screenBatcher.end();
+		screenBatcher.end();
         
         /* DEBUG 
         debugRenderer.render(manager.getWorld(), worldCam.combined);
@@ -209,12 +205,7 @@ public class GameRenderer {
 	}
 	
 	public void drawCanvasShapes() {
-		
-		if ( manager.isCreate()) drawModifiers();
-		drawJoints();
 		drawPoints();
-
-		// object builder activated by input processor
 		
 		switch(state){
 		case NONE:
@@ -241,11 +232,12 @@ public class GameRenderer {
 	}
 	
 	public void drawToolbar(){
-		screenRenderer.set(ShapeType.Filled);
-		screenRenderer.setColor(new Color(64/255f, 64/255f, 64/255f, 1f));
-		screenRenderer.rect(0, 0, GameConstants.WIDTH , GameConstants.LC_HEIGHT + GameConstants.LC_PADDING + 5);
-		screenRenderer.setColor(new Color(128/255f, 128/255f, 128/255f, 1f));
-		//screenRenderer.rect(0, height + padding, width, padding);
+		screenBatcher.draw(AssetLoader.rectangleShadow,-GameConstants.WIDTH,GameConstants.HEIGHT - GameConstants.LC_HEIGHT - 5*GameConstants.LC_PADDING, 3*GameConstants.WIDTH , GameConstants.LC_HEIGHT + 2*GameConstants.LC_PADDING);
+		screenBatcher.setColor(new Color(64/255f, 64/255f,64/255f,1f));
+		screenBatcher.draw(AssetLoader.chain,0, 0, GameConstants.WIDTH , GameConstants.LC_HEIGHT + 2*GameConstants.LC_PADDING);
+		screenBatcher.draw(AssetLoader.chain,0,GameConstants.HEIGHT - GameConstants.LC_HEIGHT - 2*GameConstants.LC_PADDING, GameConstants.WIDTH , GameConstants.LC_HEIGHT + 2*GameConstants.LC_PADDING);
+		screenBatcher.setColor(Color.WHITE);
+
 	}
 	
 	public void drawUISprites() {
@@ -267,19 +259,6 @@ public class GameRenderer {
 		default:
 			break;
 		}
-	}
-	
-	public void drawJoints() {
-		worldRenderer.set(ShapeType.Filled);//for filled rectline
-	    for (IJoint j : joints ) {
-    		j.draw(worldRenderer);
-	    }
-	}
-	
-	public void drawModifiers(){
-		worldRenderer.set(ShapeType.Filled);
-		for(IModifier m : modifiers) 
-			m.draw(worldRenderer);
 	}
 	
 	public void drawPoints(){
@@ -375,6 +354,5 @@ public class GameRenderer {
 	
 	public void dispose(){
 		screenBatcher.dispose();
-		screenRenderer.dispose();
 	}
 }

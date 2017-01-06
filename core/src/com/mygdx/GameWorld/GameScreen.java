@@ -1,17 +1,14 @@
 package com.mygdx.GameWorld;
 
-import java.io.FileNotFoundException;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.physics.box2d.World;
-
+import com.mygdx.InputProcessing.GameInputProcessor;
+import com.mygdx.InputProcessing.MenuInputProcessor;
 import com.mygdx.Renderer.GameRenderer;
-import com.mygdx.managers.GameInputManager;
-import com.mygdx.managers.MenuInputProcessor;
 
 public class GameScreen implements Screen {
 	
@@ -34,7 +31,7 @@ public class GameScreen implements Screen {
 		
 		InputMultiplexer multiplexer = new InputMultiplexer();
 		multiplexer.addProcessor(new MenuInputProcessor(manager));
-		multiplexer.addProcessor(new GameInputManager(manager,renderer));
+		multiplexer.addProcessor(new GameInputProcessor(manager,renderer));
 		Gdx.input.setInputProcessor(multiplexer);
 		
 		renderer.initButtons();
@@ -55,6 +52,7 @@ public class GameScreen implements Screen {
 
 	@Override
 	public void resize(int width, int height) {
+		GameConstants.setConstants();
 		// TODO Auto-generated method stub
 	}
 
@@ -80,8 +78,7 @@ public class GameScreen implements Screen {
 	public void dispose() {
 		world.dispose();
 		renderer.dispose();
-		// TODO Auto-generated method stub
-		
+		manager.dispose();		
 	}
 
 }

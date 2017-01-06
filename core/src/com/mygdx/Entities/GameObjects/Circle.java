@@ -1,31 +1,27 @@
 package com.mygdx.Entities.GameObjects;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
-import com.mygdx.Entities.Modifiers.IModifier;
-import com.mygdx.XMLService.CircleBean;
-import com.mygdx.managers.AssetLoader;
+import com.mygdx.InputProcessing.AssetLoader;
+import com.mygdx.XMLService.Beans.CircleBean;
 
-public class Circle implements IGameObject{
+public class Circle extends GameObjectUtility implements IGameObject {
 	private final float pos[];
 	private final boolean pinned;
+	private final boolean hidden;
 	private final float radius;
 	private final float restitution;
 	private final float friction;
 	private final float density;
-	private final TextureRegion textureRegion;
 	
-	private Body body;
+	private Sprite objectSprite;
+	private Sprite shadowSprite;
 	//private Fixture fixture;
 	
 	public static class Constructor {
@@ -38,6 +34,7 @@ public class Circle implements IGameObject{
 		private float restitution = 0.6f;
 		private float friction = 0.1f;
 		private float density = 1.0f;
+		private boolean hidden = false;
 		
 		public Constructor(float [] pos, float radius, boolean pinned){
 			this.pos = pos;
@@ -54,29 +51,38 @@ public class Circle implements IGameObject{
 		public Constructor density(float val)
 		{ this.density = val;		return this; }
 		
+		public Constructor hidden(boolean hidden)
+		{ this.hidden = hidden;		return this;}
+		
 		public Circle Construct(){
 			return new Circle(this);
 		}
 	}
 	
 	public Circle(Constructor constructor){
+		super();
 		pos = constructor.pos;
 		pinned = constructor.pinned;
+		hidden = constructor.hidden;
 		radius = constructor.radius > 0.5 ? constructor.radius : 0.25f;
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
-		textureRegion = pinned ? AssetLoader.circlePinned : AssetLoader.circle;
+		objectSprite = new Sprite(pinned ? AssetLoader.circlePinned : AssetLoader.circle);
+		shadowSprite = new Sprite(AssetLoader.circleShadow);
 	}
 	
 	public Circle(CircleBean circleBean){
+		super();
 		this.pos = circleBean.getPos();
 		this.radius = circleBean.getRadius();
 		this.pinned = circleBean.getPinned();
+		this.hidden = circleBean.getHidden();
 		this.restitution = circleBean.getRestitution();
 		this.friction = circleBean.getFriction();
 		this.density = circleBean.getDensity();
-		this.textureRegion = pinned ? AssetLoader.circlePinned : AssetLoader.circle;
+		objectSprite = new Sprite(pinned ? AssetLoader.circlePinned : AssetLoader.circle);
+		shadowSprite = new Sprite(AssetLoader.circleShadow);
 	}
 	
 	@Override
@@ -97,30 +103,29 @@ public class Circle implements IGameObject{
 		
 		body.createFixture(fixtureDef);
 		circle.dispose();
+		
+		objectSprite.setOrigin(radius,radius);
+		objectSprite.setSize(radius*2, radius*2);
+		
+		shadowSprite.setOrigin((radius/128)*(108+60),(radius/128)*(108+60));
+		shadowSprite.setSize((radius*2/256)*(216 + 120),(radius*2/256)*(216 + 120));
 	}
 	
 	@Override
 	public void draw(SpriteBatch batcher){
-		batcher.draw(textureRegion, 
-				(body.getPosition().x - radius), 
-				(body.getPosition().y - radius), 
-				radius, 
-				radius, 
-				radius*2,
-				radius*2,
-				1f,1f,(float)(Math.toDegrees(body.getAngle())));
+		objectSprite.setPosition(body.getPosition().x - radius, body.getPosition().y - radius);
+		objectSprite.setRotation((float)(Math.toDegrees(body.getAngle())));
+		
+		objectSprite.draw(batcher);
 	}
 	
 	@Override
 	public void drawShadows(SpriteBatch batcher){
-		batcher.draw(AssetLoader.circleShadow, 
-				(body.getPosition().x - (radius/128)*(128 + 60)), 
-				(body.getPosition().y - (radius/128)*(128 + 60)), 
-				(radius/128)*(108+60), 
-				(radius/128)*(108+60), 
-				(radius*2/256)*(216 + 120),
-				(radius*2/256)*(216 + 120),
-				1f,1f,(float)(Math.toDegrees(body.getAngle())));
+		shadowSprite.setPosition((body.getPosition().x - (radius/128)*(128 + 60)), 
+								 (body.getPosition().y - (radius/128)*(128 + 60)));
+		shadowSprite.setRotation((float)(Math.toDegrees(body.getAngle())));
+		
+		shadowSprite.draw(batcher);
 		
 	}
 	
@@ -133,11 +138,6 @@ public class Circle implements IGameObject{
 			return true;
 		}
 		return false;
-	}
-	
-	@Override
-	public Body getBody(){
-		return body;
 	}
 	
 	@Override
@@ -156,6 +156,7 @@ public class Circle implements IGameObject{
 		CircleBean circleBean = new CircleBean();
 		
 		circleBean.setPinned(pinned);
+		circleBean.setHidden(hidden);
 		circleBean.setRadius(radius);
 		circleBean.setPos(new float []{body.getPosition().x,body.getPosition().y});
 		circleBean.setRestitution(restitution);

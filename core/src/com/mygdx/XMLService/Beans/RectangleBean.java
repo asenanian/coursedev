@@ -1,25 +1,35 @@
-package com.mygdx.XMLService;
+package com.mygdx.XMLService.Beans;
 
 import java.io.Serializable;
 
-public class CircleBean implements Serializable {
+public class RectangleBean implements Serializable {
 
-    private float position[] = null;
-    private float radius = 0;
+    private float x = 0;
+    private float y = 0;
+    private float width = 0;
+    private float height = 0;
     private float restitution = 0;
     private float friction = 0;
     private float density = 0;
     private boolean pinned = false;
 
-    public CircleBean() {
+    public RectangleBean() {
     }
     
-    public float[] getPos(){
-    	return position;
+    public float getX(){
+    	return x;
     }
     
-    public float getRadius(){
-    	return radius;
+    public float getY(){
+    	return y;
+    }
+    
+    public float getWidth(){
+    	return width;
+    }
+    
+    public float getHeight(){
+    	return height;
     }
     
     public boolean getPinned(){
@@ -38,12 +48,20 @@ public class CircleBean implements Serializable {
 		return density;
 	}
     
-    public void setPos(float position[]){
-    	this.position = position;
+    public void setX(float x){
+    	this.x = x;
     }
     
-    public void setRadius(float radius){
-    	this.radius = radius;
+    public void setY(float y){
+    	this.y = y;
+    }
+    
+    public void setWidth(float width){
+    	this.width = width;
+    }
+    
+    public void setHeight(float height){
+    	this.height = height;
     }
     
     public void setPinned(boolean pinned){
@@ -62,9 +80,9 @@ public class CircleBean implements Serializable {
     	this.density = density;
     }
     
-    @Override
+	@Override
     public String toString(){
-    	return "CIRCLE";
-    }
+    	return "RECTANGLE";
+	}    
    
 }

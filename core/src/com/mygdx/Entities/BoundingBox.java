@@ -21,7 +21,8 @@ public class BoundingBox {
 		float width = object.getWidth() + 0.1f;
 		float height = object.getHeight() + 0.1f;
 		float angle = (float)(Math.toDegrees(object.getBody().getAngle()));
-		Vector2 pos = object.getBody().getPosition();
+		Vector2 pos = object.getPosition();
+		
 		shapeRenderer.set(ShapeType.Line);
 		shapeRenderer.setColor(Color.GRAY);
 		shapeRenderer.rect(

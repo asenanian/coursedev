@@ -1,4 +1,4 @@
-package com.mygdx.Actions;
+package com.mygdx.InputProcessing.Actions;
 
 import java.util.ArrayList;
 

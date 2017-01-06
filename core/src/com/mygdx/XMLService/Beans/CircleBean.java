@@ -1,35 +1,26 @@
-package com.mygdx.XMLService;
+package com.mygdx.XMLService.Beans;
 
 import java.io.Serializable;
 
-public class RectangleBean implements Serializable {
+public class CircleBean implements Serializable {
 
-    private float x = 0;
-    private float y = 0;
-    private float width = 0;
-    private float height = 0;
+    private float position[] = null;
+    private float radius = 0;
     private float restitution = 0;
     private float friction = 0;
     private float density = 0;
     private boolean pinned = false;
+    private boolean hidden = false;
 
-    public RectangleBean() {
+    public CircleBean() {
     }
     
-    public float getX(){
-    	return x;
+    public float[] getPos(){
+    	return position;
     }
     
-    public float getY(){
-    	return y;
-    }
-    
-    public float getWidth(){
-    	return width;
-    }
-    
-    public float getHeight(){
-    	return height;
+    public float getRadius(){
+    	return radius;
     }
     
     public boolean getPinned(){
@@ -48,20 +39,12 @@ public class RectangleBean implements Serializable {
 		return density;
 	}
     
-    public void setX(float x){
-    	this.x = x;
+    public void setPos(float position[]){
+    	this.position = position;
     }
     
-    public void setY(float y){
-    	this.y = y;
-    }
-    
-    public void setWidth(float width){
-    	this.width = width;
-    }
-    
-    public void setHeight(float height){
-    	this.height = height;
+    public void setRadius(float radius){
+    	this.radius = radius;
     }
     
     public void setPinned(boolean pinned){
@@ -80,9 +63,17 @@ public class RectangleBean implements Serializable {
     	this.density = density;
     }
     
-	@Override
+    @Override
     public String toString(){
-    	return "RECTANGLE";
-	}    
+    	return "CIRCLE";
+    }
+
+	public boolean getHidden() {
+		return hidden;
+	}
+	
+	public void setHidden(boolean hidden){
+		this.hidden = hidden;
+	}
    
 }

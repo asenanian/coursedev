@@ -1,11 +1,11 @@
 package com.mygdx.Entities.Modifiers;
 
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.mygdx.Entities.GameObjects.IGameObject;
+import java.io.Serializable;
+
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public interface IModifier {
 	public void initialize();
-	public void draw(ShapeRenderer shapeRenderer);	
-	public void update();
-	public void setGameObject(IGameObject gameObject);
+	public void draw(SpriteBatch batcher);	
+	public Serializable getBean();
 }

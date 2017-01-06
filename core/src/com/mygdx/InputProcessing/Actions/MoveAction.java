@@ -1,4 +1,4 @@
-package com.mygdx.Actions;
+package com.mygdx.InputProcessing.Actions;
 
 import com.mygdx.Entities.GameObjects.IGameObject;
 import com.mygdx.GameWorld.GameManager;

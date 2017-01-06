@@ -5,31 +5,33 @@ import java.io.Serializable;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.physics.box2d.joints.DistanceJointDef;
 import com.mygdx.Entities.GameObjects.IGameObject;
+import com.mygdx.Entities.GameObjects.Field;
 import com.mygdx.GameWorld.GameConstants;
 import com.mygdx.GameWorld.GameManager;
 import com.mygdx.InputProcessing.AssetLoader;
 import com.mygdx.XMLService.Beans.StickBean;
 
-public class Stick implements IJoint{
+public class Ruler {
 
 	private float length;
-	
 	private IGameObject point1, point2;
+	private Field field1, field2;
 	
-	private DistanceJointDef defJoint;
-	
-	public Stick(IGameObject point1, IGameObject point2){
+	public Ruler(IGameObject point1, IGameObject point2){
 		this.length = point1.getPosition().cpy().sub(point2.getPosition()).len();
 		this.point1 = point1;
 		this.point2 = point2;
 	}
 	
+	public Ruler(Field field1, Field field2){
+		this.length = field1.getPosition().cpy().sub(field2.getPosition()).len();
+		this.field1 = field1;
+		this.field2 = field2;
+	}
+	
 	// bean constructor
-	public Stick(StickBean stickBean, GameManager manager){
+	public Ruler(StickBean stickBean, GameManager manager){
 		this.length = stickBean.getLength();
 		
 		for(IGameObject gameObject : manager.getPoints()){
@@ -45,19 +47,7 @@ public class Stick implements IJoint{
 			}
 		}
 	}
-	
-	public void initialize(World world){
-		Body body1 = point1.getBody();
-		Body body2 = point2.getBody();
-		
-		defJoint = new DistanceJointDef();
-		defJoint.length = length;
-		defJoint.initialize(body1, body2, body1.getPosition(), body2.getPosition());
-		
-		world.createJoint(defJoint);
-	}
 
-	@Override
 	public void draw(SpriteBatch batcher) {
 		Vector2 pos1 = point1.getPosition();
 		Vector2 pos2 = point2.getPosition();
@@ -74,12 +64,6 @@ public class Stick implements IJoint{
 		sprite.draw(batcher);
 	}
 
-	@Override
-	public void update() {
-		//
-	}
-
-	@Override
 	public Serializable getBean() {
 		StickBean stickBean = new StickBean();
 		stickBean.setLength(length);

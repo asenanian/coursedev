@@ -1,6 +1,8 @@
-package com.mygdx.Actions;
+package com.mygdx.InputProcessing.Actions;
 
+import com.mygdx.Entities.GameObjects.IGraphObject;
 import com.mygdx.Entities.GameObjects.IGameObject;
+import com.mygdx.Entities.GameObjects.Field;
 import com.mygdx.GameWorld.GameManager;
 import com.mygdx.Renderer.GameRenderer;
 
@@ -23,6 +25,19 @@ public class ActionUtility {
 		for(IGameObject object : manager.getPoints()){
 			if (object.containsPos(mousePos))
 				return object;
+		}
+		return null;
+	}
+	
+	protected IGraphObject getClickable(float [] mousePos) {
+		for(IGameObject object : manager.getPoints()){
+			if (object.containsPos(mousePos))
+				return object;
+		}
+		for(Field field : manager.getFields()){
+			if(field.containsPos(mousePos)){
+				return field;
+			}
 		}
 		return null;
 	}

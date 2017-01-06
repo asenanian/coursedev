@@ -3,7 +3,7 @@ package com.mygdx.ui;
 import java.util.HashMap;
 
 import com.mygdx.GameWorld.GameConstants;
-import com.mygdx.managers.AssetLoader;
+import com.mygdx.InputProcessing.AssetLoader;
 
 public class LevelCreatorUI {
 	
@@ -79,31 +79,33 @@ public class LevelCreatorUI {
 		toolBar.put("FIELD", new SimpleButton(
 				12*GameConstants.LC_PADDING + 11*GameConstants.LC_WIDTH, GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
-				AssetLoader.rectangleButtonUp,AssetLoader.rectangleButtonDown));
+				AssetLoader.fieldButtonUp,AssetLoader.fieldButtonDown));
 				
-		//play/pause button (start it off showing play button)
+		// play/pause button (start it off showing play button)
 		controlBar.put("RUN", new SimpleButton(
-				GameConstants.WIDTH - GameConstants.LC_WIDTH - GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
+				4*GameConstants.LC_PADDING + 3*GameConstants.LC_WIDTH, GameConstants.HEIGHT - GameConstants.LC_HEIGHT - GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
 				AssetLoader.playButtonUp,AssetLoader.playButtonDown));
 		
-		//clear screen button
+		// clear screen button
 		controlBar.put("RESTART", new SimpleButton(
-				GameConstants.WIDTH - 2*GameConstants.LC_WIDTH - 2*GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
+				GameConstants.LC_PADDING, GameConstants.HEIGHT - GameConstants.LC_HEIGHT - GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
 				AssetLoader.restartButtonUp,AssetLoader.restartButtonDown));
 		
-		//save button
-		controlBar.put("SAVE", new SimpleButton(
-				GameConstants.WIDTH - 3*GameConstants.LC_WIDTH - 3*GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
-				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
-				AssetLoader.restartButtonUp,AssetLoader.restartButtonDown));
-		
-		//save button
+		// load button
 		controlBar.put("LOAD", new SimpleButton(
-				GameConstants.WIDTH - 4*GameConstants.LC_WIDTH - 4*GameConstants.LC_PADDING, GameConstants.LC_PADDING, 
+				2*GameConstants.LC_PADDING + GameConstants.LC_WIDTH, GameConstants.HEIGHT - GameConstants.LC_HEIGHT - GameConstants.LC_PADDING, 
 				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
-				AssetLoader.restartButtonUp,AssetLoader.restartButtonDown));
+				AssetLoader.loadButtonUp,AssetLoader.loadButtonDown));
+		
+		// save button
+		controlBar.put("SAVE", new SimpleButton(
+				3*GameConstants.LC_PADDING + 2*GameConstants.LC_WIDTH, GameConstants.HEIGHT - GameConstants.LC_HEIGHT - GameConstants.LC_PADDING, 
+				GameConstants.LC_WIDTH, GameConstants.LC_HEIGHT, 
+				AssetLoader.saveButtonUp,AssetLoader.saveButtonDown));
+		
+
 	}
 
 }

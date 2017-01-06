@@ -1,4 +1,4 @@
-package com.mygdx.managers;
+package com.mygdx.InputProcessing;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -22,7 +22,8 @@ public class AssetLoader {
 	stickButtonUp, stickButtonDown, hiddenButtonUp, hiddenButtonDown, pinnedButtonUp, pinnedButtonDown,
 	curveButtonUp, curveButtonDown, springButtonUp, springButtonDown, moveButtonDown, moveButtonUp,
 	circleButtonUp, circleButtonDown, panButtonDown, panButtonUp, pathButtonUp, pathButtonDown, rectangleButtonUp, rectangleButtonDown, velocityButtonUp,
-	velocityButtonDown, forceButtonUp, forceButtonDown ;
+	velocityButtonDown, forceButtonUp, forceButtonDown, fieldButtonUp, fieldButtonDown, saveButtonUp, saveButtonDown,
+	loadButtonUp, loadButtonDown;
 	
 	public static TextureRegion circle, circlePinned, circleShadow, rectangle, rectanglePinned, 
 	rectangleShadow, rectangleShadowLandscape, rectangleShadowPortrait, chain, chainShadow, region;
@@ -86,7 +87,7 @@ public class AssetLoader {
 		pathButtonUp = new TextureRegion(levelCreatorUI,0*LC_BUTTON_WIDTH,2*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
 		pathButtonDown = new TextureRegion(levelCreatorUI,0*LC_BUTTON_WIDTH,3*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
 		
-		// path button
+		// rectangle button
 		rectangleButtonUp = new TextureRegion(levelCreatorUI,1*LC_BUTTON_WIDTH,2*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
 		rectangleButtonDown = new TextureRegion(levelCreatorUI,1*LC_BUTTON_WIDTH,3*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
 		
@@ -98,6 +99,17 @@ public class AssetLoader {
 		forceButtonUp = new TextureRegion(levelCreatorUI,3*LC_BUTTON_WIDTH,2*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
 		forceButtonDown = new TextureRegion(levelCreatorUI,3*LC_BUTTON_WIDTH,3*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
 		
+		// field button
+		fieldButtonUp = new TextureRegion(levelCreatorUI,4*LC_BUTTON_WIDTH,2*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
+		fieldButtonDown = new TextureRegion(levelCreatorUI,4*LC_BUTTON_WIDTH,3*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
+		
+		// load button
+		loadButtonUp = new TextureRegion(levelCreatorUI,5*LC_BUTTON_WIDTH,2*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
+		loadButtonDown = new TextureRegion(levelCreatorUI,5*LC_BUTTON_WIDTH,3*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
+		
+		// save button
+		saveButtonUp = new TextureRegion(levelCreatorUI,6*LC_BUTTON_WIDTH,2*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
+		saveButtonDown = new TextureRegion(levelCreatorUI,6*LC_BUTTON_WIDTH,3*LC_BUTTON_HEIGHT,LC_BUTTON_WIDTH,LC_BUTTON_HEIGHT);
 	
 		menuUI = new Texture(Gdx.files.internal("UI/MenuUI.png"));
 		menuUI.setFilter(TextureFilter.Nearest,TextureFilter.Nearest);
@@ -137,8 +149,7 @@ public class AssetLoader {
 				848, PATH_DIAMETER);
 		
 		// region
-		region = new TextureRegion(gameObjects,512 + 10 + 60 , 60, 216,216 );
-		
+		region = new TextureRegion(gameObjects,512 + 10 + 60 , 60, 216,216 );		
 		
 	}
 	

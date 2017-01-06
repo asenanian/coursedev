@@ -10,8 +10,8 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.mygdx.Entities.GameObjects.*;
 import com.mygdx.Entities.Joints.*;
 import com.mygdx.Entities.Modifiers.*;
+import com.mygdx.InputProcessing.WebSocketManager;
 import com.mygdx.Renderer.GameRenderer;
-import com.mygdx.managers.ClientInterface;
 import com.mygdx.XMLService.XMLDeserializer;
 import com.mygdx.XMLService.XMLSerializer;
 
@@ -34,7 +34,7 @@ public class GameManager {
 	private ArrayList<Field> fields;
 	
 	//Server
-	public ClientInterface connection;
+	public WebSocketManager socketManager;
 	
 	// Game State
 	public GameState currentState;	
@@ -48,8 +48,8 @@ public class GameManager {
 		public void init(IGameObject object, float [] pos){
 			this.pos = pos;
 			this.objectToPin = object;
-			this.offset = new float [] { pos[0] - objectToPin.getBody().getPosition().x,
-										 pos[1] - objectToPin.getBody().getPosition().y};
+			this.offset = new float [] { pos[0] - objectToPin.getPosition().x,
+										 pos[1] - objectToPin.getPosition().y};
 		}
 		
 		public void pinObject(){
@@ -74,8 +74,8 @@ public class GameManager {
 		currentState = GameState.MENU;
 		
 		//server connect
-		//connection = new ClientInterface();
-		//connection.connectSocket();
+		socketManager = new WebSocketManager();
+		socketManager.connectSocket();
 		
 		initGameObjects();
 		initWall();
@@ -128,11 +128,11 @@ public class GameManager {
 	// updating running game state
 	public void updateRunning(float delta) {
 		
+		for (IGameObject gameObject : points)
+			gameObject.update();
+		
 		for (IJoint s : joints)
 			s.update();
-		
-		for (IModifier m : modifiers)
-			m.update();
 		
 		for (Field f : fields)
 			f.update(points);
@@ -169,28 +169,21 @@ public class GameManager {
 		fields.add(field);
 	}
 	
-	public void addVelocityToObject(IGameObject point, float [] endPos){
-		Vector2 beginPos = point.getBody().getPosition();
-		Velocity impulse = new Velocity(point, beginPos, new Vector2(endPos[0], endPos[1]));
-		impulse.initialize();
-		modifiers.add(impulse);		
+	public void addVelocity(IGraphObject clickable,float [] endPos){
+		Velocity velocity = new Velocity(clickable,new Vector2(endPos[0],endPos[1]));
+		velocity.initialize();
+		modifiers.add(velocity);
 	}
 	
-	
-	public void addVelocityToField(Field field, float [] endPos ){
-		
+	public void addModifier(IModifier modifier){
+		modifier.initialize();
+		modifiers.add(modifier);
 	}
 	
-	public void addForceToObject(IGameObject point, float [] endPos){
-		Vector2 beginPos = point.getBody().getPosition();
-		Force force = new Force(point, beginPos, new Vector2( endPos[0], endPos[1]));
+	public void addForce(IGraphObject clickable, float [] endPos){
+		Force force = new Force(clickable, new Vector2(endPos[0],endPos[1]));
 		force.initialize();
 		modifiers.add(force);
-	}
-	
-	public void addForceToField(Field field, float [] endPos){
-		Vector2 beginPos = field.getCenter();
-		field.setModifier(new Force(null,beginPos,new Vector2(endPos[0],endPos[1])));
 	}
 	
 	public void addStick(IGameObject p1, IGameObject p2){
@@ -286,10 +279,6 @@ public class GameManager {
 	public void toggleCreative(){
 		if ( currentState == GameState.RUNNING){
 			currentState = GameState.CREATE;
-			for ( IModifier m : modifiers){
-				if (m instanceof Velocity)
-					((Velocity)m).update();
-			}
 		} else
 			currentState = GameState.RUNNING;
 	}
@@ -351,5 +340,9 @@ public class GameManager {
 
 	public boolean isPinning() {
 		return pinner.objectToPin != null;
+	}
+	
+	public void dispose(){
+		socketManager.dispose();
 	}
 }

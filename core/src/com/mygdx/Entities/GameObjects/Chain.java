@@ -5,25 +5,23 @@ import java.io.Serializable;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.ChainShape;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.World;
 import com.mygdx.GameWorld.GameConstants;
-import com.mygdx.XMLService.ChainBean;
-import com.mygdx.managers.AssetLoader;
+import com.mygdx.InputProcessing.AssetLoader;
+import com.mygdx.XMLService.Beans.ChainBean;
 
-public class Chain implements IGameObject{
+public class Chain extends GameObjectUtility implements IGameObject {
 	private final Vector2 [] vertices;
 	private final float restitution;
 	private final float friction;
 	private final float density;
 	private final float width = GameConstants.MODIFIER_WIDTH / 2f; // distance from center to edge
 	
-	private Body body;
-	private Fixture fixture;
+	private Sprite objectSprite;
+	private Sprite shadowSprite;
 	
 	public static class Constructor {
 		// required params
@@ -61,13 +59,18 @@ public class Chain implements IGameObject{
 	}
 	
 	public Chain(Constructor constructor){
+		super();
 		vertices = constructor.vertices;
 		restitution = constructor.restitution;
 		friction = constructor.friction;
 		density = constructor.density;
+		objectSprite = new Sprite(AssetLoader.chain);
+		shadowSprite = new Sprite(AssetLoader.chainShadow);
 	}
 	
 	public Chain(ChainBean chainBean){
+		super();
+		
 		float [] verticesInFloatArray = chainBean.getVertices();
 		this.vertices = new Vector2 [verticesInFloatArray.length/2];
 		
@@ -78,6 +81,8 @@ public class Chain implements IGameObject{
 		restitution = chainBean.getRestitution();
 		friction = chainBean.getFriction();
 		density = chainBean.getDensity();
+		objectSprite = new Sprite(AssetLoader.chain);
+		shadowSprite = new Sprite(AssetLoader.chainShadow);
 	}
 	
 	@Override
@@ -97,42 +102,41 @@ public class Chain implements IGameObject{
 		fixtureDef.friction = friction;
 		fixtureDef.restitution = restitution;
 		
-		fixture = body.createFixture(fixtureDef);
+		body.createFixture(fixtureDef);
 		chainShape.dispose();
+		
+		objectSprite.setOrigin(0, 0);
+		shadowSprite.setOrigin(0, 0 );
 	}
 	
 	@Override
 	public void draw(SpriteBatch batcher){
-		Sprite sprite = new Sprite(AssetLoader.chain);
-		sprite.setOrigin(0, 0);
 		
 		for(int i = 0 ; i < vertices.length - 1; i++){
 			
 			Vector2 diff = vertices[i+1].cpy().sub(vertices[i]);
 			
-			sprite.setPosition(vertices[i].x, vertices[i].y - width);
-			sprite.setSize(diff.len(), width*2);
+			objectSprite.setPosition(vertices[i].x, vertices[i].y - width);
+			objectSprite.setSize(diff.len(), width*2);
 
-			sprite.setRotation(diff.angle());
-			sprite.draw(batcher);
+			objectSprite.setRotation(diff.angle());
+			objectSprite.draw(batcher);
 		}
 		
 	}
 	
 	@Override
 	public void drawShadows(SpriteBatch batcher){
-		Sprite sprite = new Sprite(AssetLoader.chainShadow);
-		sprite.setOrigin(0, 0 );
 		
 		for(int i = 0 ; i < vertices.length - 1; i++){
 			Vector2 diff = vertices[i+1].cpy().sub(vertices[i]);
 			
-			sprite.setPosition(vertices[i].x - ( width / 32 ) * (32 + 60), 
+			shadowSprite.setPosition(vertices[i].x - ( width / 32 ) * (32 + 60), 
 					vertices[i].y - ( width / 32 ) * (32 + 60) );
-			sprite.setSize(diff.len(), (width / 32) * ( 60 + 10 + 60));
+			shadowSprite.setSize(diff.len(), (width / 32) * ( 60 + 10 + 60));
 
-			sprite.setRotation(diff.angle());
-			sprite.draw(batcher);
+			shadowSprite.setRotation(diff.angle());
+			shadowSprite.draw(batcher);
 		}
 
 	}
@@ -140,11 +144,6 @@ public class Chain implements IGameObject{
 	@Override
 	public boolean containsPos(float [] pos){
 		return false;
-	}
-	
-	@Override
-	public Body getBody(){
-		return body;
 	}
 	
 	@Override
